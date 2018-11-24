@@ -11,10 +11,18 @@ class UserDetails {
 
   static UserDTO _user = UserDTO();
 
-  void setUserData(Map<String, dynamic> json, bool hasToke) {
+  void setUserData(Map<String, dynamic> json) {
     print("IN SET USER DATA => $json");
 
-    _user = UserDTO.fromJson(json, hasToke);
+    _user = UserDTO.fromJson(json);
+    print("USER => $json");
+    print("USER => ${_user.toFullJson()}");
+  }
+
+  void updateUserData(Map<String, dynamic> json) {
+    print("IN SET USER DATA => $json");
+
+    _user.update(json);
     print("USER => $json");
     print("USER => ${_user.toFullJson()}");
   }

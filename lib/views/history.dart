@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:core';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../utils/color_conts.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
@@ -15,6 +17,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<History> historyList = [];
 
   var _loading = true;
+  var dateFormat = DateFormat('kk:mm:ss a | EEE d MM yyy');
 
   @override
   void initState() {
@@ -71,7 +74,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
           FlatButton(
-            onPressed: (() {}),
+            onPressed: (() {
+              fetchHistory();
+            }),
 //              child: Text("Cancel", style: TextStyle(),)
           )
         ],
@@ -107,85 +112,145 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Expanded(
         child: ListView.builder(
             itemCount: historyList.length,
-            itemBuilder: (BuildContext content, int index) {
+            itemBuilder: (BuildContext context, int index) {
               History history = historyList[index];
-              var date = "12:30 | Wed, 21 Nov 2018";
+              DateTime now =
+                  DateTime.fromMillisecondsSinceEpoch(history.callDate);
+              var date = dateFormat.format(now);
 
-              return Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(left: 8.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  date,
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                      fontSize: 14.0, color: Colors.black),
-                                ),
-                                SizedBox(
-                                  height: 8.0,
-                                ),
-                                Row(
-                                  children: <Widget>[
-                                    Text(
-                                      "ICE Notified:",
-                                      style: TextStyle(
-                                          fontSize: 14.0, color: Colors.grey),
-                                    ),
-                                    SizedBox(
-                                      width: 8.0,
-                                    ),
-                                    Text(
-                                      "${history.iceNotified}",
-                                      style: TextStyle(
-                                          fontSize: 14.0, color: Colors.black),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: <Widget>[
-                                    Text(
-                                      "Organizations Notified:",
-                                      style: TextStyle(
-                                          fontSize: 14.0, color: Colors.grey),
-                                    ),
-                                    SizedBox(
-                                      width: 8.0,
-                                    ),
-                                    Text(
-                                      "${history.organizationsNotified}",
-                                      style: TextStyle(
-                                          fontSize: 14.0, color: Colors.black),
-                                    ),
-                                  ],
-                                ),
-                              ],
+              var number = "";
+              number = history.icePhoneNumbersNotified.join(",\n");
+
+              return GestureDetector(
+                onTap: (() {
+                  showDialog(
+                      context: context,
+//        barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        // return object of type Dialog
+                        return AlertDialog(
+                          title: Text("ICEs Alerted"),
+                          content: Text(number),
+                          actions: <Widget>[
+                            // usually buttons at the bottom of the dialog
+                            new FlatButton(
+                              child: Text("Close"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      });
+                }),
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.max,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    date,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                        fontSize: 14.0, color: Colors.black),
+                                  ),
+                                  SizedBox(
+                                    height: 8.0,
+                                  ),
+                                  Row(
+                                    children: <Widget>[
+                                      Text(
+                                        "ICE Notified:",
+                                        style: TextStyle(
+                                            fontSize: 14.0, color: Colors.grey),
+                                      ),
+                                      SizedBox(
+                                        width: 8.0,
+                                      ),
+                                      Text(
+                                        "${history.icesNotified}",
+                                        style: TextStyle(
+                                            fontSize: 14.0,
+                                            color: Colors.black),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: <Widget>[
+                                      Text(
+                                        "Organizations Notified:",
+                                        style: TextStyle(
+                                            fontSize: 14.0, color: Colors.grey),
+                                      ),
+                                      SizedBox(
+                                        width: 8.0,
+                                      ),
+                                      Text(
+                                        "${history.organizationsNotified}",
+                                        style: TextStyle(
+                                            fontSize: 14.0,
+                                            color: Colors.black),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(right: 16.0),
-                          child: Icon(Icons.chevron_right),
-                        )
-                      ],
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(top: 16.0),
-                      height: 0.5,
-                      color: Colors.grey,
-                    ),
-                  ],
+                          Container(
+                            margin: EdgeInsets.only(right: 16.0),
+                            child: Icon(Icons.chevron_right),
+                          )
+                        ],
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(top: 16.0),
+                        height: 0.5,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
                 ),
               );
             }));
+  }
+
+  _showDialog(List<dynamic> phoneNumber) {
+    print("SHOWING DIALOG NOW");
+
+    String number = "";
+//
+//    if (phoneNumber.isNotEmpty) {
+//      number = phoneNumber.join("\n");
+//    }
+
+    /*showDialog(
+        context: context,
+//        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+            title: Text("ICEs Alerted"),
+            content: Container(height: 50.0, child: Text(number)),
+            actions: <Widget>[
+              // usually buttons at the bottom of the dialog
+              new FlatButton(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });*/
   }
 
   void fetchHistory() {
@@ -209,9 +274,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 //            var history = json.decode(item);
 //            print(item.runtimeType);
 
-              setState(() {
-                historyList.add(History.fromJson(item));
-              });
+              historyList.add(History.fromJson(item));
+              print(item);
+              print(History.fromJson(item).icesNotified);
             }
           }
 
@@ -233,14 +298,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 class History {
   History(
-      {this.iceNotified,
+      {this.icesNotified,
       this.icePhoneNumbersNotified,
       this.organizationsNotified,
       this.status,
       this.callDate});
 
   History.fromJson(Map<String, dynamic> json)
-      : iceNotified = json.containsKey("iceNotified") ? json['iceNotified'] : 0,
+      : icesNotified =
+            json.containsKey("icesNotified") ? json['icesNotified'] : 0,
         icePhoneNumbersNotified = json.containsKey("icePhoneNumbersNotified")
             ? json['icePhoneNumbersNotified']
             : [],
@@ -250,7 +316,7 @@ class History {
         status = json.containsKey("status") ? json['status'] : "",
         callDate = json.containsKey("callDate") ? json['callDate'] : 0;
 
-  int iceNotified;
+  int icesNotified;
   List<dynamic> icePhoneNumbersNotified;
   int organizationsNotified;
   String status;

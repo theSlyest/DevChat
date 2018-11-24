@@ -6,7 +6,7 @@ import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/model/phone_and_pin.dart';
 import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/routes_utils.dart';
-import 'package:seclot/views/otp.dart';
+import 'package:seclot/views/auth/otp.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

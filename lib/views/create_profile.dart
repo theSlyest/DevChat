@@ -80,8 +80,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
     print(user.toFullJson());
 
+    String s = "${user.firstName} ${user.lastName}";
+    s = s.replaceAll("\t", '');
     setState(() {
-      _nameController.text = "${user.firstName} ${user.lastName}";
+      _nameController.text = s;
       _referealIdController.text = "${user.seclotId}";
       _emailController.text = "${user.email}";
 
@@ -93,34 +95,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
       _loading = false;
     });
-//    setState(() {
-//      _loading = true;
-//    });
-//
-//    APIService.getInstance()
-//        .getUserProfile(UserDetails().getUserData().token)
-//        .then((response) {
-//      if (response.isEmpty) {
-//        //show error
-//        return;
-//      }
-//
-//      var profile = json.decode(response);
-//      print(response);
-//
-//      setState(() {
-//        _loading = false;
-//
-//        _nameController.text =
-//            "${profile['firstName'].toString().replaceAll("\t", "")} "
-//            "${profile['lastName']}";
-//
-//        _referealIdController.text = "${profile['seclotId']}";
-//        _addressController.text =
-//
-//        _getPhone();
-//      });
-//    });
   }
 
   @override
@@ -147,11 +121,77 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     });
   }
 
+  var imageUploading = false;
+  var uploadError = false;
   void uploadImage(File image) {
-    LocalStorageHelper().getLoginDetails().then((details) {
-      var userDetails = json.decode(details);
-      APIService().updateImage(userDetails['token'], image);
+    setState(() {
+      imageUploading = true;
     });
+
+    LocalStorageHelper().getToken().then((token) {
+      APIService().updateImage(token, image).then((response) {
+        if (response.isEmpty) {
+          uploadError = false;
+        } else {
+          uploadError = false;
+        }
+
+        setState(() {
+          imageUploading = false;
+        });
+      });
+    });
+  }
+
+  Widget getAddButton() {
+    if (imageUploading) {
+      return Container(
+        child: CircularProgressIndicator(),
+      );
+    } else if (uploadError) {
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 40.0,
+                ),
+                onPressed: () {
+                  uploadImage(_image);
+                }),
+            SizedBox(
+              height: 4.0,
+            ),
+            Text(
+              'Retry',
+              style: TextStyle(fontSize: 16.0, color: Colors.white),
+            ),
+          ]);
+    } else {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          IconButton(
+              icon: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 40.0,
+              ),
+              onPressed: _showImagePickerDialog),
+          SizedBox(
+            height: 4.0,
+          ),
+          Text(
+            'Change image',
+            style: TextStyle(fontSize: 16.0, color: Colors.white),
+          ),
+        ],
+      );
+    }
   }
 
   @override
@@ -250,31 +290,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                                   ),
                                   Align(
                                       alignment: Alignment.center,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: <Widget>[
-                                          IconButton(
-                                              icon: Icon(
-                                                Icons.add,
-                                                color: Colors.white,
-                                                size: 40.0,
-                                              ),
-                                              onPressed:
-                                                  _showImagePickerDialog),
-                                          SizedBox(
-                                            height: 4.0,
-                                          ),
-                                          Text(
-                                            'Change image',
-                                            style: TextStyle(
-                                                fontSize: 16.0,
-                                                color: Colors.white),
-                                          ),
-                                        ],
-                                      )),
+                                      child: getAddButton()),
                                 ],
                               ),
                             ),
@@ -725,7 +741,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   void _copyReferal() {
-    print("copy");
+    Clipboard.setData(new ClipboardData(text: _referealIdController.text));
   }
 
   void _view_map() {

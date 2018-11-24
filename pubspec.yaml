@@ -34,7 +34,9 @@ dependencies:
   clippy: ^1.0.0
   flutter_places_dialog: ^1.0.3
   location: ^1.4.1
-#  paystack_sdk: ^0.0.1
+  paystack_sdk: ^0.0.1
+  intl: 0.15.7
+  flutter_masked_text: ^0.7.0
 
 #
 #dev_dependencies:

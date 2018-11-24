@@ -36,7 +36,7 @@ class _ViewProfileState extends State<ViewProfile> {
 
   @override
   void initState() {
-    getData();
+    fetchData();
 
     super.initState();
   }
@@ -332,7 +332,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  'ADDRESS',
+                  'LAST KNOWN LOCATION',
                   style: TextStyle(fontSize: _labelSize, color: Colors.grey),
                 ),
               ),
@@ -399,7 +399,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  void getData() {
+  void fetchData() {
 //    LocalStorageHelper().getPhon()
 //        .then((phone){
 //      setState(() {
@@ -412,11 +412,13 @@ class _ViewProfileState extends State<ViewProfile> {
 
     var profile = UserDetails().getUserData();
 
+    String s = "${profile.firstName} ${profile.lastName}";
     setState(() {
-      _name = "${profile.firstName} ${profile.lastName}";
+      _name = s.replaceAll(new RegExp(r'[^\w\s]+'), '');
       _email = profile.email;
       _pin = "*******";
       _referal_id = profile.seclotId.toString();
+      _address = "${profile.latitude} ${profile.longitude}";
     });
   }
 }

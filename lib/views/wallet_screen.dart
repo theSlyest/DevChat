@@ -1,13 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_masked_text/flutter_masked_text.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:seclot/utils/routes_utils.dart';
+import 'package:paystack_sdk/paystack_sdk.dart';
+import 'package:seclot/views/funding/fund_wallet.dart';
 import '../data_store/user_details.dart';
 import '../data_store/api_service.dart';
+import '../data_store/local_storage_helper.dart';
 import '../model/user.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -16,6 +22,14 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  var _error = false;
+  var _loading = false;
+
+  var gap = SizedBox(height: 8.0);
+
+//  var _amountController = MoneyMaskedTextController(decimalSeparator: '.', thousandSeparator: ',');
+  final formatter = new NumberFormat("#,###.##");
+
   UserDTO _user;
 
   double _width;
@@ -25,20 +39,181 @@ class _WalletScreenState extends State<WalletScreen> {
   String _cardNumber = '1234';
   String _balance = '₦0.0';
 
-  @override
-  void initState() {
+  bool paymentReady = false;
+
+  void showBalance() {
     setState(() {
-      _user = UserDetails().getUserData();
-      _balance = "₦ ${_user.walletBalance}";
+      _error = false;
+      _loading = true;
+    });
+
+    LocalStorageHelper().getToken().then((token) {
+      APIService().getUserProfile(token).then((response) {
+        if (response.statusCode == 200) {
+          _user = UserDetails().getUserData();
+          _balance = "₦ ${formatter.format(_user.walletBalance)}";
+
+          _error = false;
+        } else {
+          _error = true;
+        }
+
+        setState(() {
+          _loading = false;
+        });
+      });
     });
   }
 
-  Future getImage() async {
-    var image = await ImagePicker.pickImage(source: ImageSource.camera);
+  @override
+  void initState() {
+    showBalance();
+  }
 
-    setState(() {
-      _image = image;
-    });
+  Widget getView() {
+    if (_loading) {
+      return Column(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Center(
+            child: CircularProgressIndicator(),
+          ),
+          FlatButton(
+            onPressed: (() {}),
+//              child: Text("Cancel", style: TextStyle(),)
+          )
+        ],
+      );
+    } else if (_error) {
+      return Column(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Center(
+              child: Text(
+                  "Error occured, please check your network and try again"),
+            ),
+          ),
+          FlatButton(
+            onPressed: (() {
+              showBalance();
+            }),
+//              child: Text("Cancel", style: TextStyle(),)
+          )
+        ],
+      );
+    } else {
+      return _contentView();
+    }
+  }
+
+  Widget _contentView() {
+    return ListView(
+      children: <Widget>[
+        Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            balanceView(),
+            SizedBox(
+              height: 16.0,
+            ),
+            Card(
+              margin: EdgeInsets.only(
+                  left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    margin: EdgeInsets.all(8.0),
+                    child: Center(
+                      child: Text(
+                        "ACCOUNT DETAILS",
+                        style: TextStyle(fontSize: 20.0),
+                      ),
+                    ),
+                  ),
+                  Container(
+                      color: Colors.grey,
+                      height: 1.0,
+                      margin: EdgeInsets.only(top: 4.0, bottom: 16.0)),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          "Account Status: ",
+                          style: TextStyle(fontSize: 16.0, color: Colors.grey),
+                        ),
+                        Expanded(
+                          child: Text(
+                            "ENABLED",
+                            style: TextStyle(
+                                fontSize: 16.0, fontWeight: FontWeight.bold),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 8.0,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          "Next Bill Date: ",
+                          style: TextStyle(fontSize: 16.0, color: Colors.grey),
+                        ),
+                        Expanded(
+                          child: Text(
+                            "MON 20/12/018 10:00 AM",
+                            style: TextStyle(
+                                fontSize: 16.0, fontWeight: FontWeight.bold),
+                          ),
+                        )
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Card(
+              margin: EdgeInsets.only(
+                  left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    margin: EdgeInsets.all(8.0),
+                    child: Center(
+                      child: Text(
+                        "UPDATE SUBSCRIPTION",
+                        style: TextStyle(fontSize: 20.0),
+                      ),
+                    ),
+                  ),
+                  Container(
+                      color: Colors.grey,
+                      height: 1.0,
+                      margin: EdgeInsets.only(top: 4.0, bottom: 16.0)),
+                  dailyPlan(),
+                  weekly(),
+                  monthly(),
+                  yearly(),
+                ],
+              ),
+            )
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -47,23 +222,12 @@ class _WalletScreenState extends State<WalletScreen> {
 //      theme: ThemeData(primaryColor: Colors.black, primaryColorDark: Colors.black, accentColor: Colors.black),
 
       child: Scaffold(
-        appBar: new AppBar(
-          title: Text('Wallet'),
-          iconTheme: IconThemeData(color: Colors.white),
-          backgroundColor: Colors.black,
-        ),
-        body: Column(
-          children: <Widget>[
-            balanceView(),
-            Padding(
-              padding: EdgeInsets.all(16.0),
-            ),
-//            cardDetails(),
-//            bankAccount(),
-            Expanded(child: paymentHistory())
-          ],
-        ),
-      ),
+          appBar: new AppBar(
+            title: Text('Wallet'),
+            iconTheme: IconThemeData(color: Colors.white),
+            backgroundColor: Colors.black,
+          ),
+          body: getView()),
     );
   }
 
@@ -72,10 +236,6 @@ class _WalletScreenState extends State<WalletScreen> {
       alignment: Alignment.center,
       children: <Widget>[
         Container(height: 200.0, color: Colors.black),
-        /*Center(
-                      child: new Image.asset(_image),
-                    ),*/
-
         Column(
           children: <Widget>[
             Text(
@@ -88,18 +248,20 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Padding(
                 padding: EdgeInsets.all(18.0),
                 child: RaisedButton(
-                    splashColor: Colors.grey,
+                    color: Colors.grey,
+                    splashColor: Colors.black,
                     child: new Text(
-                      "Fund",
+                      "Fund Wallet",
                       style: TextStyle(fontSize: 18.0),
                     ),
                     onPressed: () {
-//                      Navigator.pushNamed(context, RoutUtils.subscription);
-                      APIService.getInstance()
-                          .fundAccount("T055280341809835", _user.token);
+                      Navigator.push(
+                          context,
+                          new MaterialPageRoute(
+                              builder: (context) => FundWalletScreen()));
                     },
                     shape: new RoundedRectangleBorder(
-                        borderRadius: new BorderRadius.circular(16.0))),
+                        borderRadius: new BorderRadius.circular(24.0))),
               ),
             ),
           ],
@@ -187,145 +349,153 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget paymentHistory() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: MarginUtils.walletTextViewMargins,
-          child: Text(
-            "UPDATE SUBSCRIPTION",
-            style: TextStyle(fontSize: 20.0),
-          ),
-        ),
-        Flexible(child: _ListView()),
-      ],
-    );
-  }
-
-  Widget _ListView() {
-    return Container(
-      margin: EdgeInsets.all(16.0),
-      child: ListView(
-        children: <Widget>[
-          dailyPlan(),
-          Container(
-              color: Colors.grey,
-              height: 1.0,
-              margin: EdgeInsets.only(top: 16.0, bottom: 16.0)),
-          weekly(),
-          Container(
-              color: Colors.grey,
-              height: 1.0,
-              margin: EdgeInsets.only(top: 16.0, bottom: 16.0)),
-          monthly(),
-          Container(
-              color: Colors.grey,
-              height: 1.0,
-              margin: EdgeInsets.only(top: 16.0, bottom: 16.0)),
-          yearly(),
-          Container(
-              color: Colors.grey,
-              height: 1.0,
-              margin: EdgeInsets.only(top: 16.0, bottom: 16.0))
-        ],
+  Widget dailyPlan() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+            onTap: (() {
+              _showDialog("daily", "5", "5 minutes");
+            }),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text("Daily plan",
+                          style: TextStyle(
+                              fontSize: 18.0, fontWeight: FontWeight.bold)),
+                      gap,
+                      Row(
+                        children: <Widget>[
+                          Text("Price: ₦5", style: TextStyle(fontSize: 16.0)),
+                          SizedBox(width: 16.0),
+                          Text("Duration: 5 minutes",
+                              style: TextStyle(fontSize: 16.0)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right)
+              ],
+            )),
       ),
     );
   }
 
-  Widget dailyPlan() {
-    return InkWell(
-        onTap: (() {
-          _showDialog("daily", "5", "5 minutes");
-
-//          UpdateSubscriptionDialog();
-        }),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text("Daily plan",
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4.0),
-            Row(
-              children: <Widget>[
-                Text("Price: ₦5", style: TextStyle(fontSize: 16.0)),
-                SizedBox(width: 16.0),
-                Text("Duration: 5 minutes", style: TextStyle(fontSize: 16.0)),
-              ],
-            ),
-          ],
-        ));
-  }
-
   Widget weekly() {
-    return InkWell(
-        onTap: (() {
-          _showDialog("weekly", "10", "1 week");
-        }),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text("Weekly plan",
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4.0),
-            Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+            onTap: (() {
+              _showDialog("weekly", "10", "1 week");
+            }),
+            child: Row(
               children: <Widget>[
-                Text("Price: ₦10", style: TextStyle(fontSize: 16.0)),
-                SizedBox(width: 16.0),
-                Text("Duration: 1 week", style: TextStyle(fontSize: 16.0)),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text("Weekly plan",
+                          style: TextStyle(
+                              fontSize: 18.0, fontWeight: FontWeight.bold)),
+                      gap,
+                      Row(
+                        children: <Widget>[
+                          Text("Price: ₦10", style: TextStyle(fontSize: 16.0)),
+                          SizedBox(width: 16.0),
+                          Text("Duration: 1 week",
+                              style: TextStyle(fontSize: 16.0)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right)
               ],
-            ),
-          ],
-        ));
+            )),
+      ),
+    );
   }
 
   Widget monthly() {
-    return InkWell(
-        onTap: (() {
-          _showDialog("monthly", "100", "1 Month");
-        }),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text("Monthly plan",
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4.0),
-            Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+            onTap: (() {
+              _showDialog("monthly", "100", "1 Month");
+            }),
+            child: Row(
               children: <Widget>[
-                Text("Price: ₦100", style: TextStyle(fontSize: 16.0)),
-                SizedBox(width: 16.0),
-                Text("Duration: 1 month", style: TextStyle(fontSize: 16.0)),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text("Monthly plan",
+                          style: TextStyle(
+                              fontSize: 18.0, fontWeight: FontWeight.bold)),
+                      gap,
+                      Row(
+                        children: <Widget>[
+                          Text("Price: ₦100", style: TextStyle(fontSize: 16.0)),
+                          SizedBox(width: 16.0),
+                          Text("Duration: 1 month",
+                              style: TextStyle(fontSize: 16.0)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right)
               ],
-            ),
-          ],
-        ));
+            )),
+      ),
+    );
   }
 
   Widget yearly() {
-    return InkWell(
-        onTap: (() {
-          _showDialog("yearly", "1000", "1 year");
-        }),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text("Yearly plan",
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4.0),
-            Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+            onTap: (() {
+              _showDialog("yearly", "1000", "1 year");
+            }),
+            child: Row(
               children: <Widget>[
-                Text("Price: ₦1000", style: TextStyle(fontSize: 16.0)),
-                SizedBox(width: 16.0),
-                Text("Duration: 1 year", style: TextStyle(fontSize: 16.0)),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text("Yearly plan",
+                          style: TextStyle(
+                              fontSize: 18.0, fontWeight: FontWeight.bold)),
+                      gap,
+                      Row(
+                        children: <Widget>[
+                          Text("Price: ₦1000",
+                              style: TextStyle(fontSize: 16.0)),
+                          SizedBox(width: 16.0),
+                          Text("Duration: 1 year",
+                              style: TextStyle(fontSize: 16.0)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right)
               ],
-            ),
-          ],
-        ));
+            )),
+      ),
+    );
   }
 
   Widget editBankDetailsButton() {
@@ -340,56 +510,6 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-//  _showDialog(String plan, String price, String duration) async {
-//    await showDialog<String>(
-//      context: context,
-//      child: new AlertDialog(
-//        contentPadding: const EdgeInsets.all(16.0),
-//        content: Container(
-//          height: 150.0,
-//          child: Column(
-//            crossAxisAlignment: CrossAxisAlignment.stretch,
-//            mainAxisAlignment: MainAxisAlignment.start,
-//            children: <Widget>[
-//              Text(
-//                "UPDATE SUBSCRIPTION TO ${plan.toUpperCase()} PLAN?",
-//                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-//              ),
-//
-//              SizedBox(height: 20.0),
-//              Text("Price: ₦$price", style: TextStyle(fontSize: 16.0)),
-//              SizedBox(height: 16.0),
-//              Text("Duration: $duration", style: TextStyle(fontSize: 16.0)),
-////            Row(
-////              children: <Widget>[
-////                Expanded(
-////                  child: Text("Price", style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),),
-////              child: new TextField(
-////                autofocus: true,
-////                decoration: new InputDecoration(
-////                    labelText: 'Full Name', hintText: 'eg. John Smith'),
-////              ),
-////                )
-////              ],
-////            ),
-//            ],
-//          ),
-//        ),
-//        actions: <Widget>[
-//          new FlatButton(
-//              child: const Text('CANCEL'),
-//              onPressed: () {
-//                Navigator.pop(context);
-//              }),
-//          new FlatButton(
-//              child: const Text('UPDATE SUBSCRIPTION'),
-//              onPressed: () {
-//                Navigator.pop(context);
-//              })
-//        ],
-//      ),
-//    );
-//  }
   _showDialog(String plan, String price, String duration) {
     showDialog(
         context: context,
@@ -402,6 +522,18 @@ class _WalletScreenState extends State<WalletScreen> {
             duration: duration,
           );
         });
+  }
+
+  Widget getTextView(String message, bool success) {
+    return success
+        ? Text(
+            message,
+            style: TextStyle(color: Colors.green, fontSize: 18.0),
+          )
+        : Text(
+            message,
+            style: TextStyle(color: Colors.red, fontSize: 18.0),
+          );
   }
 }
 
@@ -490,7 +622,7 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
           children: <Widget>[
             new FlatButton(
               child: new Text(
-                "CANCEL",
+                "CLOSE",
                 style: TextStyle(color: Colors.black),
               ),
               onPressed: () {
@@ -521,7 +653,6 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
 
                 if (response.statusCode == 200) {
                   //all is well
-
                   _show_error = false;
                   setState(() {
                     _show_success = true;
@@ -545,7 +676,7 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
               });
             },
             child: Text(
-              'SAVE CHANGES',
+              'ACTIVATE',
               style: TextStyle(fontSize: 16.0, color: Colors.black),
             ),
             textColor: Colors.white,

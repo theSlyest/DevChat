@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/routes_utils.dart';
-import 'package:seclot/views/otp.dart';
+import 'package:seclot/views/auth/otp.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthScreen extends StatefulWidget {

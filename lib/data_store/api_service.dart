@@ -114,7 +114,7 @@ class APIService {
       var resBody = json.decode(response.body);
 
       var userDetails = UserDetails();
-      userDetails.setUserData(resBody, true);
+      userDetails.setUserData(resBody);
       userDetails.getUserData().token = resBody["token"];
 
 //      UserData.getInstance().token = resBody["token"];
@@ -158,7 +158,7 @@ class APIService {
       var resBody = json.decode(response.body);
 
       var userDetails = UserDetails();
-      userDetails.setUserData(resBody, true);
+      userDetails.setUserData(resBody);
       userDetails.getUserData().token = resBody["token"];
 
       LocalStorageHelper().saveToken(resBody["token"]);
@@ -184,7 +184,7 @@ class APIService {
 //    return response;
   }
 
-  Future<String> getUserProfile(String token) async {
+  Future<http.Response> getUserProfile(String token) async {
     final CREATE_ACCOUNT_URL = "$_BASE_URL/user/profile";
 
     print(CREATE_ACCOUNT_URL);
@@ -196,17 +196,19 @@ class APIService {
 
     if (response.statusCode == 200) {
       print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+//      print("${response.body}");
 
 //      LocalStorageHelper().saveAccountDetails(response.body);
-      return response.body;
+
+//      print(response.body);
+      UserDetails().updateUserData(json.decode(response.body));
     } else {
       print("API REQUEST FAILED WOEFULLY");
       print("${response.statusCode}");
       print("${response.body}");
-
-      return "";
     }
+
+    return response;
 
 //    return response;
   }
@@ -230,7 +232,7 @@ class APIService {
       print("API REQUEST WAS SUCCESSFUL");
       print("${response.body}");
 
-      UserDetails().setUserData(json.decode(response.body), false);
+      UserDetails().updateUserData(json.decode(response.body));
 
 //      LocalStorageHelper().saveAccountDetails(response.body);
 
@@ -268,7 +270,7 @@ class APIService {
       print("API REQUEST WAS SUCCESSFUL");
       print("${response.body}");
 
-      UserDetails().setUserData(json.decode(response.body), false);
+      UserDetails().updateUserData(json.decode(response.body));
 
 //      LocalStorageHelper().saveAccountDetails(response.body);
 
@@ -284,11 +286,10 @@ class APIService {
 //    return response;
   }
 
-  Future<bool> updateImage(String token, File _image) async {
+  Future<String> updateImage(String token, File imageFile) async {
     print("Uploading image!");
-    _image.length().then((size) {
-      print(size);
-    });
+
+    print(imageFile.path);
     print(token);
 
     final UPDATE_PROFILE_IMAGE_URL = "$_BASE_URL/user/profile/picture";
@@ -298,44 +299,55 @@ class APIService {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
     headers["Token"] = token;
 
+    /*final response = await http.put(
+      UPDATE_PROFILE_IMAGE_URL,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Token': token
+      },
+      body: {
+        'image': 'data:image/png;base64,' +
+            base64Encode(imageFile.readAsBytesSync()),
+      },
+    );*/
+
+    print("BASE NAME => ${basename(imageFile.path)}");
+
     Dio dio = new Dio();
-    FormData formdata = new FormData(); // just like JS
-    formdata.add("image", new UploadFileInfo(_image, basename(_image.path)));
-    dio
-        .put("/user/profile/picture",
-            data: formdata,
-            options: Options(
-                headers: headers,
-                baseUrl: _BASE_URL,
-                method: 'PUT',
-                responseType: ResponseType.JSON // or ResponseType.JSON
-                ))
-        .then((response) => print(response))
-        .catchError((error) => print(error));
+    FormData formdata = new FormData();
+    formdata.add(
+//        "image", new UploadFileInfo(imageFile, basename(imageFile.path)));
+        "image",
+        new UploadFileInfo(imageFile, 'image.png'));
+
+    try {
+      //404
+      await dio
+          .put("/user/profile/picture",
+              data: formdata,
+              options: Options(
+                  headers: headers,
+                  baseUrl: _BASE_URL,
+                  method: 'PUT',
+                  responseType: ResponseType.JSON))
+          .then((response) {
+        print(response.data);
+        return response.toString();
+      }).catchError((error) {
+        print("ERROR OCCURED ${(error as DioError).message}");
+        return "";
+      });
+    } on DioError catch (e) {
+      if (e.response != null) {
+        print(e.message);
+      } else {
+        print(e.message);
+      }
+    }
+
+//    print(response);
 
 //    return response;
-  }
-
-  Upload(File imageFile) async {
-    final UPDATE_PROFILE_IMAGE_URL = "$_BASE_URL/user/profile/picture";
-
-    var stream =
-        new http.ByteStream(DelegatingStream.typed(imageFile.openRead()));
-    var length = await imageFile.length();
-
-    var uri = Uri.parse(UPDATE_PROFILE_IMAGE_URL);
-
-    var request = new http.MultipartRequest("PUT", uri);
-    var multipartFile = new http.MultipartFile('file', stream, length,
-        filename: basename(imageFile.path));
-    //contentType: new MediaType('image', 'png'));
-
-    request.files.add(multipartFile);
-    var response = await request.send();
-    print(response.statusCode);
-    response.stream.transform(utf8.decoder).listen((value) {
-      print(value);
-    });
   }
 
   //====================================================================================================================///
@@ -344,7 +356,8 @@ class APIService {
   //
   //====================================================================================================================//
 
-  Future<String> fundAccount(String transactionReference, String token) async {
+  Future<http.Response> fundAccount(
+      String transactionReference, String token) async {
     final FUND_WALLET = "$_BASE_URL/user/fund-wallet";
     print("ENDPOING ==> $FUND_WALLET");
 
@@ -373,13 +386,15 @@ class APIService {
     if (response.statusCode == 200) {
       print("API REQUEST WAS SUCCESSFUL");
       print("${response.body}");
+
+//      getUserProfile(token);
     } else {
       print("API REQUEST FAILED WOEFULLY");
       print("${response.statusCode}");
       print("${response.body}");
     }
 
-    return response.body;
+    return response;
   }
 
   Future<http.Response> updateSubscription(String plan, String token) async {
