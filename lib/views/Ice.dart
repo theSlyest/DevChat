@@ -5,6 +5,7 @@ import 'package:seclot/data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
 import '../data_store/user_details.dart';
 import '../utils/color_conts.dart';
+import 'package:http/http.dart' as http;
 
 class IceScreen extends StatefulWidget {
   @override
@@ -16,6 +17,7 @@ class _IceScreenState extends State<IceScreen> {
 
   var _loading = false;
   var _errorOccured = false;
+  var _token = "";
 
   List<Contact> personalIce = [];
   List<Contact> cooperateIce = [];
@@ -33,6 +35,8 @@ class _IceScreenState extends State<IceScreen> {
     });
 
     LocalStorageHelper().getToken().then((token) {
+      _token = token;
+
       APIService().getIce(token).then((iceResponse) {
         if (iceResponse.statusCode != 200) {
           setState(() {
@@ -42,29 +46,35 @@ class _IceScreenState extends State<IceScreen> {
           return;
         }
 
-        Map<String, dynamic> resBody = json.decode(iceResponse.body);
-        print(resBody);
-
-        List<dynamic> personalIceJsonList = resBody['userICEs'];
-        List<dynamic> cooperateIceJsonList = resBody['organizationICEs'];
-
-        print(personalIceJsonList);
-        print(cooperateIceJsonList);
-
-        for (Map<String, dynamic> ice in personalIceJsonList) {
-          print(ice);
-          personalIce.add(Contact.fromJson(ice));
-        }
-
-        for (Map<String, dynamic> ice in cooperateIceJsonList) {
-          cooperateIce.add(Contact.fromJson(ice));
-        }
+        loadIces(iceResponse);
 
         setState(() {
           _loading = false;
         });
       });
     });
+  }
+
+  void loadIces(var iceResponse) {
+    Map<String, dynamic> resBody = json.decode(iceResponse.body);
+    print(resBody);
+
+    List<dynamic> personalIceJsonList = resBody['userICEs'];
+    List<dynamic> cooperateIceJsonList = resBody['organizationICEs'];
+
+//    print(personalIceJsonList);
+//    print(cooperateIceJsonList);
+
+    personalIce.clear();
+    for (Map<String, dynamic> ice in personalIceJsonList) {
+//      print(ice);
+      personalIce.add(Contact.fromJson(ice));
+    }
+
+    cooperateIce.clear();
+    for (Map<String, dynamic> ice in cooperateIceJsonList) {
+      cooperateIce.add(Contact.fromJson(ice));
+    }
   }
 
   void _showDialog() {
@@ -80,6 +90,216 @@ class _IceScreenState extends State<IceScreen> {
           // return object of type Dialog
           return AddICeDialog();
         });
+  }
+
+  void resumeIce(Contact ice) {
+    APIService()
+        .updateIce(iceId: ice.id, pause: false, token: _token)
+        .then((response) {
+      print(_token);
+      print(ice.id);
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode != 200) {
+        //show error toast
+        return;
+      }
+
+      setState(() {
+        _loading = true;
+      });
+
+      loadIces(response);
+
+      setState(() {
+        _loading = false;
+      });
+    });
+  }
+
+  var pausing = false;
+  var pauseError = "";
+  void _showConfirmPauseDialog(Contact ice) {
+    setState(() {
+      pausing = false;
+      pauseError = "";
+    });
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+              title: Text("PAUSE THIS ICE"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text("Are you sure you want to pause this ICE? "
+                      "\nThey will no longer get notified whenever you issue a call"),
+                  Container(
+                    margin: EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      pauseError,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
+                ],
+              ),
+              actions: <Widget>[
+                Container(
+                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      FlatButton(
+                          onPressed: (() {
+                            Navigator.of(context).pop();
+                          }),
+                          child: Text("CANCEL")),
+                      pauseButton(ice)
+                    ],
+                  ),
+                )
+              ]);
+        });
+  }
+
+  Widget pauseButton(Contact ice) {
+    return pausing
+        ? CircularProgressIndicator()
+        : RaisedButton(
+            onPressed: (() {
+              setState(() {
+                pausing = true;
+              });
+
+              APIService()
+                  .updateIce(iceId: ice.id, pause: true, token: _token)
+                  .then((response) {
+                pausing = false;
+                print("HANDLING RESPONSE");
+
+                if (response.statusCode != 200) {
+                  //show error toast
+                  setState(() {
+                    pauseError = response.body;
+                  });
+
+                  return;
+                }
+
+                setState(() {
+                  pauseError = "";
+                });
+
+                Navigator.of(context).pop();
+                setState(() {
+                  _loading = true;
+                });
+
+                loadIces(response);
+
+                setState(() {
+                  _loading = false;
+                });
+              });
+            }),
+            child: Text("PAUSE ICE"),
+            color: Colors.black,
+            textColor: Colors.white);
+  }
+
+  var deleting = false;
+  var deletError = "";
+  void _showConfrimDeleteDialog(Contact ice) {
+    setState(() {
+      deleting = false;
+      deletError = "";
+    });
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+              title: Text("DELETE ICE"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                      "Are you sure you want to delete this ICE? \n[NOTE: this action cannot be undone]"),
+                  Container(
+                    margin: EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      deletError,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
+                ],
+              ),
+              actions: <Widget>[
+                Container(
+                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      FlatButton(
+                          onPressed: (() {
+                            Navigator.of(context).pop();
+                          }),
+                          child: Text("CANCEL")),
+                      deleteButton(ice)
+                    ],
+                  ),
+                )
+              ]);
+        });
+  }
+
+  Widget deleteButton(Contact ice) {
+    return deleting
+        ? CircularProgressIndicator()
+        : RaisedButton(
+            onPressed: (() {
+              setState(() {
+                deleting = true;
+              });
+
+              APIService().deleteIce(ice.id, _token).then((response) {
+                deleting = false;
+                print("HANDLING RESPONSE");
+
+                if (response.statusCode != 200) {
+                  //show error toast
+                  setState(() {
+                    deletError = response.body;
+                  });
+
+                  return;
+                }
+
+                setState(() {
+                  deletError = "";
+                });
+
+                Navigator.of(context).pop();
+                setState(() {
+                  _loading = true;
+                });
+
+                loadIces(response);
+
+                setState(() {
+                  _loading = false;
+                });
+              });
+            }),
+            child: Text("DELETE ICE"),
+            color: Colors.black,
+            textColor: Colors.white);
   }
 
   @override
@@ -106,17 +326,6 @@ class _IceScreenState extends State<IceScreen> {
               'ICE',
               textAlign: TextAlign.left,
             ),
-//            bottom: TabBar(
-//              tabs: [
-//                Tab(
-//                  text: "Personal",
-//                ),
-//                Tab(
-//                  text: "Cooperate",
-//                ),
-//              ],
-//            ),
-//          title: Text('Tabs Demo'),
           ),
           body: getLayout()),
     );
@@ -212,103 +421,95 @@ class _IceScreenState extends State<IceScreen> {
       ],
     );
   }
-}
 
-Widget _tabbar() {
-  return TabBarView(
-    children: [
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-              color: ColorUtils.light_gray,
-              padding: EdgeInsets.only(top: 24.0, bottom: 16.0, left: 24.0),
-              child: Text(
-                'PERSONAL ICE',
-                style: TextStyle(fontSize: 18.0, color: Colors.black),
-              )),
-          _ListView(allContacts),
-        ],
-      ),
+  Widget _ListView(List<Contact> contactList) {
+    return ListView.builder(
+        shrinkWrap: true,
+        physics: ClampingScrollPhysics(),
+        itemCount: contactList.length,
+        itemBuilder: (BuildContext content, int index) {
+          Contact contact = contactList[index];
 
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-              color: ColorUtils.light_gray,
-              padding: EdgeInsets.only(top: 24.0, bottom: 16.0, left: 24.0),
-              child: Text(
-                'COOPERATE ICE',
-                style: TextStyle(fontSize: 18.0, color: Colors.black),
-              )),
-          _ListView(allContacts),
-        ],
-      )
-
-//            Icon(Icons.directions_bike),
-    ],
-  );
-}
-
-Widget _ListView(List<Contact> contactList) {
-  return ListView.builder(
-      shrinkWrap: true,
-      physics: ClampingScrollPhysics(),
-      itemCount: contactList.length,
-      itemBuilder: (BuildContext content, int index) {
-        Contact contact = contactList[index];
-
-        return Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Container(
-                    width: 50.0,
-                    height: 50.0,
-                    decoration: new BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: new Border.all(
-                        width: 1.0,
-                        color: Colors.grey,
+          return Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 50.0,
+                      height: 50.0,
+                      decoration: new BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: new Border.all(
+                          width: 1.0,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          contact.name[0],
+                          style: TextStyle(fontSize: 20.0, color: Colors.grey),
+                        ),
                       ),
                     ),
-                    child: Center(
-                      child: Text(
-                        contact.name[0],
-                        style: TextStyle(fontSize: 20.0, color: Colors.grey),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.only(left: 18.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              contact.name,
+                              style: TextStyle(
+                                  fontSize: 18.0, color: Colors.black),
+                            ),
+                            Text(
+                              contact.phoneNumber,
+                              style:
+                                  TextStyle(fontSize: 14.0, color: Colors.grey),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.only(left: 18.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: <Widget>[
-                        Text(
-                          contact.name,
-                          style: TextStyle(fontSize: 18.0, color: Colors.black),
-                        ),
-                        Text(
-                          contact.phoneNumber,
-                          style: TextStyle(fontSize: 14.0, color: Colors.grey),
-                        ),
+                        getPausedIconButton(contact),
+                        IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: (() {
+                              _showConfrimDeleteDialog(contact);
+                            })),
                       ],
-                    ),
-                  )
-                ],
-              ),
-              Container(
-                margin: EdgeInsets.only(top: 30.0),
-                height: 0.5,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-        );
-      });
+                    )
+                  ],
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: 30.0),
+                  height: 0.5,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
+  Widget getPausedIconButton(Contact ice) {
+    return ice.paused
+        ? IconButton(
+            icon: Icon(Icons.play_arrow),
+            onPressed: (() {
+              resumeIce(ice);
+            }))
+        : IconButton(
+            icon: Icon(Icons.pause),
+            onPressed: (() {
+              _showConfirmPauseDialog(ice);
+            }));
+  }
 }
 
 class AddICeDialog extends StatefulWidget {
@@ -322,8 +523,6 @@ class AddICeDialog extends StatefulWidget {
 
 class _AddICeDialogState extends State<AddICeDialog> {
   final _formKey = GlobalKey<FormState>();
-
-  String _selectedId;
 
   var _phone = "";
   var _name = "";
@@ -462,14 +661,20 @@ class _AddICeDialogState extends State<AddICeDialog> {
 
                     APIService.getInstance()
                         .saveIce(_name, _phone, token)
-                        .then((body) {
+                        .then((response) {
                       _saving_changes = false;
-                      _show_error = true;
 
-                      print(body);
-                      setState(() {
-                        _errorMessage = body["message"];
-                      });
+                      if (response.statusCode != 200) {
+                        _errorMessage = response.body;
+
+                        setState(() {
+                          _show_error = true;
+                        });
+
+                        return;
+                      }
+
+                      Navigator.of(context).pop();
                       //done
                     });
                   }

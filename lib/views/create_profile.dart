@@ -84,7 +84,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     s = s.replaceAll("\t", '');
     setState(() {
       _nameController.text = s;
-      _referealIdController.text = "${user.seclotId}";
+      _referealIdController.text = "${user.referralId}";
       _emailController.text = "${user.email}";
 
       _addressController.text = "${user.latitude}, ${user.longitude}";
@@ -458,7 +458,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           ),
           Expanded(
               child: FocusScope(
-            node: new FocusScopeNode(),
+            node: FocusScopeNode(),
             child: TextFormField(
               controller: _phoneNumberController,
               style: TextStyle(fontSize: 18.0, color: Colors.black54),
@@ -504,35 +504,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   Row(
                     children: <Widget>[
                       Expanded(
-                        child: TextFormField(
-                          controller: _referealIdController,
-                          onSaved: (value) {
-                            _referalID = value;
-                          },
-                          style:
-                              TextStyle(fontSize: 18.0, color: Colors.black54),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            labelText: 'Referal ID',
-                            labelStyle: TextStyle(
-                              fontSize: inputFontStyle,
-                            ),
-                            hintStyle: TextStyle(
-                              fontSize: inputLabel,
-                              height: 1.5,
-                            ),
-                          ),
-                          autofocus: true,
-//          keyboardType: TextInputType.phone,
-                        ),
+                        child: getReferalTextField(),
                       ),
-                      FlatButton(
-                          onPressed: _copyReferal,
-                          child: Text(
-                            "copy",
-                            style:
-                                TextStyle(color: Colors.blue, fontSize: 16.0),
-                          ))
                     ],
                   ),
                   Divider(
@@ -544,6 +517,52 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         ],
       ),
     );
+  }
+
+  Widget getReferalTextField() {
+    return _referealIdController.text.isEmpty
+        ? TextFormField(
+            controller: _referealIdController,
+            onSaved: (value) {
+              _referalID = value;
+            },
+            style: TextStyle(fontSize: 18.0, color: Colors.black54),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              labelText: 'Referal ID',
+              labelStyle: TextStyle(
+                fontSize: inputFontStyle,
+              ),
+              hintStyle: TextStyle(
+                fontSize: inputLabel,
+                height: 1.5,
+              ),
+            ),
+            autofocus: true,
+//          keyboardType: TextInputType.phone,
+          )
+        : FocusScope(
+            node: FocusScopeNode(),
+            child: TextFormField(
+              controller: _referealIdController,
+              onSaved: (value) {
+                _referalID = value;
+              },
+              style: TextStyle(fontSize: 18.0, color: Colors.black54),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                labelText: 'Referal ID',
+                labelStyle: TextStyle(
+                  fontSize: inputFontStyle,
+                ),
+                hintStyle: TextStyle(
+                  fontSize: inputLabel,
+                  height: 1.5,
+                ),
+              ),
+              autofocus: true,
+            ),
+          );
   }
 
   Widget address() {
@@ -787,26 +806,20 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
 
-//                if (_addressController.text.length < 3) {
-//                  showToast("Please select your address from the map");
-//                  return;
-//                }
-
                 setState(() {
                   _saving_changes = true;
                 });
 
-                //fetch all fields
-                //update profile
-
                 LocalStorageHelper().getToken().then((token) {
                   user = UserDTO();
                   user.email = _emailController.text;
-//                  user.address = _addressController.text;
-
-                  var address = _addressController.text;
                   user.latitude = _place.location.latitude;
                   user.longitude = _place.location.longitude;
+
+                  if (_referealIdController.text.isNotEmpty &&
+                      user.referralId.isEmpty) {
+                    user.referralId = _referealIdController.text;
+                  }
 
                   print("UPDATE PROFILE PRESSED");
 

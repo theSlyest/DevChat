@@ -220,7 +220,7 @@ class _NewUserScreenState extends State<NewUserScreen> {
                 style: TextStyle(fontSize: 18.0, color: Colors.black54),
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  labelText: 'Address',
+                  labelText: 'Current location',
                   labelStyle: TextStyle(
                     fontSize: inputFontStyle,
                   ),
@@ -434,24 +434,18 @@ class _NewUserScreenState extends State<NewUserScreen> {
 
                       setState(() {
                         errorOccured = false;
-                      });
-
-                      setState(() {
                         loading = true;
                       });
 
-                      APIService().newUser(body).then((bool) {
-                        if (bool) {
+                      APIService().newUser(body).then((response) {
+                        if (response.statusCode == 200) {
                           errorOccured = false;
 
                           Navigator.of(context).pushNamedAndRemoveUntil(
                               RoutUtils.home, (Route<dynamic> route) => false);
                         } else {
-                          _errorText =
-                              "Error creating account, please check your network and try again";
-                          setState(() {
-                            errorOccured = true;
-                          });
+                          _errorText = response.body;
+                          errorOccured = true;
                         }
 
                         setState(() {
@@ -539,13 +533,14 @@ class _NewUserScreenState extends State<NewUserScreen> {
     // setState to update our non-existent appearance.
     if (!mounted) return;
 
-    print("$place");
+//    print("$place");
 
 //    _addressController.text = place.address;
 //    _latitude = place.location.latitude as String;
 //    _longitude = place.location.longitude as String;
     setState(() {
-      _addressController.text = place.address;
+      _addressController.text =
+          "lat: ${place.location.latitude}; lon: ${place.location.longitude}";
       _place = place;
     });
   }
@@ -562,7 +557,7 @@ class _NewUserScreenState extends State<NewUserScreen> {
 
     Future.delayed(const Duration(seconds: 5), () {
       Navigator.of(context).pushNamedAndRemoveUntil(
-          RoutUtils.new_user, (Route<dynamic> route) => false);
+          RoutUtils.login, (Route<dynamic> route) => false);
     });
 
 //    final scaffold = Scaffold.of(context);

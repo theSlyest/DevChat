@@ -669,12 +669,12 @@ class _HomeScreenState extends State<HomeScreen> {
       location.getLocation().then((loc) {
         currentLocation = loc;
 
-        print(currentLocation["latitude"]);
-        print(currentLocation["longitude"]);
-        print(currentLocation["accuracy"]);
-        print(currentLocation["altitude"]);
-        print(currentLocation["speed"]);
-        print(currentLocation["speed_accuracy"]);
+//        print(currentLocation["latitude"]);
+//        print(currentLocation["longitude"]);
+//        print(currentLocation["accuracy"]);
+//        print(currentLocation["altitude"]);
+//        print(currentLocation["speed"]);
+//        print(currentLocation["speed_accuracy"]);
 
         APIService()
             .updateLocation(

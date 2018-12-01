@@ -143,7 +143,7 @@ class APIService {
     }
   }
 
-  Future<bool> newUser(Map<String, dynamic> body) async {
+  Future<http.Response> newUser(Map<String, dynamic> body) async {
     final CREATE_ACCOUNT_URL = "$_BASE_URL/user/register";
 
     var header = Map<String, String>();
@@ -155,6 +155,7 @@ class APIService {
     if (response.statusCode == 200) {
 //      print(response.body);
 
+      print("API REQUEST WAS SUCCESSFUL");
       var resBody = json.decode(response.body);
 
       var userDetails = UserDetails();
@@ -162,24 +163,25 @@ class APIService {
       userDetails.getUserData().token = resBody["token"];
 
       LocalStorageHelper().saveToken(resBody["token"]);
-
-      return true;
-    } else {
-      return false;
-    }
-
-    if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
-
-      LocalStorageHelper().saveAccountDetails(response.body);
-      return true;
     } else {
       print("API REQUEST FAILED WOEFULLY");
       print("${response.body}");
-
-      return false;
     }
+
+    return response;
+
+//    if (response.statusCode == 200) {
+//      print("API REQUEST WAS SUCCESSFUL");
+//      print("${response.body}");
+//
+//      LocalStorageHelper().saveAccountDetails(response.body);
+//      return true;
+//    } else {
+//      print("API REQUEST FAILED WOEFULLY");
+//      print("${response.body}");
+//
+//      return false;
+//    }
 
 //    return response;
   }
@@ -440,8 +442,7 @@ class APIService {
   //
   //====================================================================================================================//
 
-  Future<Map<String, dynamic>> saveIce(
-      String name, String phone, String token) async {
+  Future<http.Response> saveIce(String name, String phone, String token) async {
     print("INSIDE SAVE TOKEN");
 
     final SAVE_IC = "$_BASE_URL/user/ice";
@@ -459,8 +460,8 @@ class APIService {
 
     print("SENDING REQUEST NOW IN SAVE IC");
 
-    var encode = json.decode(response.body);
-    return encode;
+//    var encode = json.decode(response.body);
+    return response;
   }
 
   Future<http.Response> getIce(String token) async {
@@ -480,18 +481,23 @@ class APIService {
     return response;
   }
 
-  Future<dynamic> updateIce(IceDTO ice, String token) async {
-    final UPDATE_ICE = "$_BASE_URL/user/ice/${ice.id}";
+  Future<http.Response> updateIce(
+      {String iceId, bool pause, String token}) async {
+    print("UPDATING ICE");
+
+    final UPDATE_ICE = "$_BASE_URL/user/ice/$iceId";
 
     var header = Map<String, String>();
     header["Token"] = token;
     header["Content-Type"] = "application/json";
 
-    final response =
-        await http.put(UPDATE_ICE, headers: header, body: ice.toJson());
+    var body = Map<String, dynamic>();
+    body['pause'] = pause;
 
-    var encode = json.decode(response.body);
-    return encode;
+    final response =
+        await http.put(UPDATE_ICE, headers: header, body: json.encode(body));
+
+    return response;
   }
 
   Future<dynamic> deleteIce(String iceId, String token) async {
@@ -502,8 +508,8 @@ class APIService {
 
     final response = await http.delete(DELETE_ICE, headers: header);
 
-    var encode = json.decode(response.body);
-    return encode;
+//    var encode = json.decode(response.body);
+    return response;
   }
 
   //====================================================================================================================///
