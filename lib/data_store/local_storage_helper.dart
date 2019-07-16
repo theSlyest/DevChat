@@ -70,6 +70,16 @@ class LocalStorageHelper {
     return (prefs.getString(_pin) ?? "");
   }
 
+  Future<bool> sentToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setBool("token_sent", true);
+  }
+
+  Future<bool> hasSentToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return (prefs.getBool("token_sent") ?? false);
+  }
+
   Future<String> getAuthCode() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 

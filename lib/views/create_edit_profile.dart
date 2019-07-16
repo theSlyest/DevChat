@@ -6,11 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_places_dialog/flutter_places_dialog.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:location/location.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
 import '../data_store/user_details.dart';
 import '../model/user.dart';
 import '../utils/color_conts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   final bool newUser;
@@ -61,6 +63,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   UserDTO user = null;
 
   bool _saving_changes = false;
+  var location = new Location();
 
   @override
   void dispose() {
@@ -75,10 +78,28 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     super.dispose();
   }
 
+  /* void _getLocation(){
+    var location = new Location();
+
+    try {
+      location.getLocation().then((loc) {
+        var currentLocation = loc;
+//
+//        latitude: loc["latitude"],
+//        longitude: loc["longitude"])
+
+        _addressController.text =
+        "${_place.location.latitude}, ${_place.location.longitude}";
+      });
+    } on PlatformException {
+
+    }
+  }*/
+
   void _fetchData() {
     this.user = UserDetails().getUserData();
 
-    print(user.toFullJson());
+    // print(user.toFullJson());
 
     String s = "${user.firstName} ${user.lastName}";
     s = s.replaceAll("\t", '');
@@ -90,7 +111,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       _addressController.text = "${user.latitude}, ${user.longitude}";
 
       if (!(user.latitude == 0.0) && !(user.longitude == 0.0)) {
-        print("LOCATION DATA => ${user.latitude}, ${user.longitude}");
+        // print("LOCATION DATA => ${user.latitude}, ${user.longitude}");
       }
 
       _loading = false;
@@ -100,7 +121,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   @override
   void initState() {
     FlutterPlacesDialog.setGoogleApiKey(
-        "AIzaSyBRTlfkTgxhu0f5-GovEpKviJUDyfqyEv8");
+        "AIzaSyCV7tym2ZRSxOvDKoB19Q6tdnzw0t9wgqQ");
+//        "AIzaSyAMttZPl6ZHtz56c3eLIFiy-5Z_wZYekPY"
+////        "AIzaSyDwbZW8HVXFZvj_6LfEaSZwWfshqzkoU2w"
+//        );
     _fetchData();
   }
 
@@ -129,11 +153,14 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     });
 
     LocalStorageHelper().getToken().then((token) {
-      APIService().updateImage(token, image).then((response) {
-        if (response.isEmpty) {
+      APIService().updateProfileImage(token, image, (success, response) {
+        if (success) {
           uploadError = false;
+          showToast("Picture updated");
         } else {
-          uploadError = false;
+          uploadError = true;
+          showToast(
+              "Error updating pic, please check your network and try again");
         }
 
         setState(() {
@@ -253,28 +280,49 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             height: 300.0,
             color: Colors.black,
             child: _image == null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        IconButton(
-                            icon: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 40.0,
+                ? user.picture.isNotEmpty
+                    ? Stack(children: <Widget>[
+                        Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.max,
+                            children: <Widget>[
+                              new Expanded(
+                                child: Stack(
+                                  children: <Widget>[
+                                    CachedNetworkImage(
+                                        imageUrl: user.picture,
+                                        fit: BoxFit.cover),
+                                    Align(
+                                        alignment: Alignment.center,
+                                        child: getAddButton()),
+                                  ],
+                                ),
+                              ),
+                            ])
+                      ])
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            IconButton(
+                                icon: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 40.0,
+                                ),
+                                onPressed: _showImagePickerDialog),
+                            SizedBox(
+                              height: 20.0,
                             ),
-                            onPressed: _showImagePickerDialog),
-                        SizedBox(
-                          height: 20.0,
+                            Text(
+                              'Upload Photo',
+                              style: TextStyle(
+                                  fontSize: 16.0, color: Colors.white),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Upload Photo',
-                          style: TextStyle(fontSize: 16.0, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  )
+                      )
                 : Stack(
                     children: <Widget>[
                       Column(
@@ -776,6 +824,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       place = await FlutterPlacesDialog.getPlacesDialog();
     } on PlatformException {
       place = null;
+    } catch (error) {
+      print("Error");
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -783,7 +833,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     // setState to update our non-existent appearance.
     if (!mounted) return;
 
-    print("$place");
+    // print("$place");
 
 //    _addressController.text = place.address;
 //    _latitude = place.location.latitude as String;
@@ -813,24 +863,27 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 LocalStorageHelper().getToken().then((token) {
                   user = UserDTO();
                   user.email = _emailController.text;
-                  user.latitude = _place.location.latitude;
-                  user.longitude = _place.location.longitude;
+
+                  if (_place != null) {
+                    user.latitude = _place.location.latitude;
+                    user.longitude = _place.location.longitude;
+                  }
 
                   if (_referealIdController.text.isNotEmpty &&
                       user.referralId.isEmpty) {
                     user.referralId = _referealIdController.text;
                   }
 
-                  print("UPDATE PROFILE PRESSED");
+                  // print("UPDATE PROFILE PRESSED");
 
                   APIService.getInstance().updateUser(token, user).then((bool) {
                     if (bool) {
-                      print("SUCCESS");
+                      // print("SUCCESS");
 
                       _fetchData();
                       showToast("Changes saved");
                     } else {
-                      print("FAILURE");
+                      // print("FAILURE");
                       showToast(
                           "Error occured while saving changes, please check your network and try again");
                     }

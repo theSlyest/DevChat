@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:seclot/utils/routes_utils.dart';
-import 'package:paystack_sdk/paystack_sdk.dart';
 import 'package:seclot/views/funding/fund_wallet.dart';
 import '../data_store/user_details.dart';
 import '../data_store/api_service.dart';
@@ -627,6 +626,8 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    RoutUtils.home, (Route<dynamic> route) => false);
               },
             ),
             _updateSubscription(),
@@ -649,6 +650,8 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
                   .updateSubscription(
                       widget.plan, UserDetails().getUserData().token)
                   .then((response) {
+                print(response.body);
+
                 var responseBody = json.decode(response.body);
 
                 if (response.statusCode == 200) {

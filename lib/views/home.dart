@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image/network.dart';
 
 import 'package:flutter/material.dart';
+import 'package:scoped_model/scoped_model.dart';
+import 'package:seclot/scopped_model/user_scopped_model.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
 import '../data_store/user_details.dart';
@@ -13,6 +17,7 @@ import '../utils/routes_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 //import 'package:geolocator/geolocator.dart';
 import 'package:location/location.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -22,6 +27,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   var _sendingCallIndicator = 0.0;
   var _callInProgress = false;
+
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
   Timer _timer;
   String _text1;
@@ -43,12 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   var localStorage = LocalStorageHelper();
 
+//  final userModel = UserModel();
+
   @override
   void initState() {
     super.initState();
 
-    getDetails();
-
+    setupFirebaseMessaging();
     _focusNode1.addListener(() {
       if (_focusNode1.hasFocus) {
         _controller1.selection = TextSelection(
@@ -106,19 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     int maxLength = 1;
 
-    _updateState() {
-      /*_text1 = _controller1.text;
-      _text2 = _controller2.text;
-      _text3 = _controller3.text;
-      _text4 = _controller4.text;
-
-      setState(() {
-        _controller1.text = _text1;
-        _controller2.text = _text2;
-        _controller3.text = _text3;
-        _controller4.text = _text4;
-      });*/
-    }
+    _updateState() {}
 
     var firstTF = new TextField(
         focusNode: _focusNode1,
@@ -142,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           }
 
-          print("new value ==> $newVal");
+//          print("new value ==> $newVal");
 
           _updateState();
         });
@@ -213,40 +209,55 @@ class _HomeScreenState extends State<HomeScreen> {
           _updateState();
         });
 
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-//        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-
+    return Card(
+      child: Column(
         children: <Widget>[
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: firstTF),
-          ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: secondTF),
-          ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: thirdTF),
-          ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: fourthTF),
+          Text('Enter pin to stop message'),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+//        crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+              children: <Widget>[
+                Expanded(
+                  child: Container(
+                    height: height,
+                    width: width,
+                    margin: margin,
+                    decoration: boxDecoration,
+                    child: Center(child: firstTF),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: height,
+                    width: width,
+                    margin: margin,
+                    decoration: boxDecoration,
+                    child: Center(child: secondTF),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: height,
+                    width: width,
+                    margin: margin,
+                    decoration: boxDecoration,
+                    child: Center(child: thirdTF),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: height,
+                    width: width,
+                    margin: margin,
+                    decoration: boxDecoration,
+                    child: Center(child: fourthTF),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -272,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 LocalStorageHelper().getPin().then((pin) {
                   if (pin == newVal) {
                     //correct pin cancel
-                    print("Input complete");
+//                    print("Input complete");
                     _dialogDismissed = true;
                     _callCanceled = true;
                     Navigator.of(context, rootNavigator: true).pop();
@@ -282,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _callInProgress = false;
                     });
                   } else if (pin.split('').reversed.join('') == newVal) {
-                    print("Input complete");
+//                    print("Input complete");
                     _dialogDismissed = true;
                     Navigator.of(context, rootNavigator: true).pop();
                     showToast("Call cancelled");
@@ -296,11 +307,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 setState(() {
                   _invalid_Pin = true;
                 });
-
-//                print("Input complete");
-//                _dialogDismissed = true;
-//                Navigator.of(context, rootNavigator: true).pop();
-//                showToast("Message cancelled");
               }
             }),
       ),
@@ -324,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // flutter defined function
     showDialog(
       context: context,
-      barrierDismissible: false,
+//      barrierDismissible: false,
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
@@ -363,231 +369,284 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     Future.delayed(const Duration(seconds: 20), () {
-      print("AFTER 10 SECONDS DELAY");
+//      print("AFTER 10 SECONDS DELAY");
+      if (!_dialogDismissed) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _dialogDismissed = true;
+      }
+
       setState(() {
         _callInProgress = false;
 
         if (!_callCanceled) {
-          print("MAKING A DISTRESS CALL NOW");
+//          print("MAKING A DISTRESS CALL NOW");
           _makeCall();
         } else {
-          print("CALL CANCELLED BY THE USER");
+//          print("CALL CANCELLED BY THE USER");
         }
       });
-
-      if (!_dialogDismissed) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
     });
   }
 
   void _makeCall() {
     LocalStorageHelper().getToken().then((token) {
-      print("TOKEN => $token");
+//      print("TOKEN => $token");
 
       APIService.getInstance().sendDistressCall(token).then((response) {
         print(response);
+      }).catchError((error) {
+        print(error);
       });
     });
   }
 
   Widget navigationDrawer() {
     const double textSize = 18.0;
-    return Column(
-      children: <Widget>[
-        DrawerHeader(
-          child: Container(
-            padding: EdgeInsets.all(8.0),
-            width: MediaQuery.of(context).size.width / 0.3,
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      child: Image.asset(ImageUtils.person_avatar),
-                      height: 100.0,
-                      width: 100.0,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          border: Border.all(color: Colors.black, width: 3.0)),
-                    ),
-                    SizedBox(width: 16.0),
-                    Expanded(
-                      child: Text(
-                        _name,
-                        style: TextStyle(fontSize: 18.0, color: Colors.white),
+    return ScopedModelDescendant<UserModel>(builder: (context, child, model) {
+      return Column(
+        children: <Widget>[
+          DrawerHeader(
+            child: Container(
+              padding: EdgeInsets.all(8.0),
+              width: MediaQuery.of(context).size.width / 0.3,
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      userModel.getUserData().picture.isNotEmpty
+                          ? Container(
+                              height: 100.0,
+                              width: 100.0,
+                              /*child: FadeInImage(
+                      placeholder: AssetImage(ImageUtils.person_avatar),
+                      image: CachedNetworkImageProvider(
+                          userModel.getUserData().picture),
+                    ),*/
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Colors.black, width: 1.0),
+                                  image: DecorationImage(
+                                      image:
+                                          /*AdvancedNetworkImage(
+                                userModel.getUserData().picture,
+                                useDiskCache: true)*/
+                                          CachedNetworkImageProvider(
+                                              userModel.getUserData().picture),
+                                      fit: BoxFit.cover)),
+                            )
+                          : Container(
+                              child: Image.asset(ImageUtils.person_avatar),
+                              height: 100.0,
+                              width: 100.0,
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Colors.black, width: 3.0))),
+                      /* Container(
+                        child: Image.asset(ImageUtils.person_avatar),
+                        height: 100.0,
+                        width: 100.0,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border:
+                                Border.all(color: Colors.black, width: 3.0)),
+                      ),*/
+                      SizedBox(width: 16.0),
+                      Expanded(
+                        child: Text(
+//                          _name,
+                          "${model.user.firstName} ${model.user.lastName}",
+                          style: TextStyle(fontSize: 18.0, color: Colors.white),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
 //                FlatButton(onPressed: (){},
 //                  child: Text("View Profile"),
 //                )
-              ],
-            ),
-          ),
-          decoration: BoxDecoration(
-//            color: Colors.black,
-            image: DecorationImage(
-              image: AssetImage(ImageUtils.nav_header_background_phone),
-              fit: BoxFit.fill,
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 10.0,
-        ),
-        Padding(
-          padding:
-              EdgeInsets.only(left: 24.0, top: 4.0, bottom: 8.0, right: 16.0),
-          child: ListTile(
-            title: Text(
-              'Home',
-              style: TextStyle(fontSize: textSize),
-            ),
-            leading: ImageIcon(
-              AssetImage(ImageUtils.home),
-            ),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
-          child: ListTile(
-            title: Text(
-              'Profile',
-              style: TextStyle(fontSize: textSize),
-            ),
-            leading: ImageIcon(
-              AssetImage(ImageUtils.profile),
-            ),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.pop(context);
-              Navigator.pushNamed(context, RoutUtils.view_profile);
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
-          child: ListTile(
-            title: Text(
-              'ICEs',
-              style: TextStyle(fontSize: textSize),
-            ),
-            leading: ImageIcon(
-              AssetImage(ImageUtils.ice),
-            ),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.pop(context);
-              Navigator.pushNamed(context, RoutUtils.ices);
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
-          child: ListTile(
-            title: Text(
-              'History',
-              style: TextStyle(fontSize: textSize),
-            ),
-            leading: ImageIcon(
-              AssetImage(ImageUtils.history),
-            ),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.pop(context);
-              Navigator.pushNamed(context, RoutUtils.history);
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
-          child: ListTile(
-            title: Text(
-              'Wallet',
-              style: TextStyle(fontSize: textSize),
-            ),
-            leading: ImageIcon(
-              AssetImage(ImageUtils.wallet),
-            ),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-
-              Navigator.pop(context);
-              Navigator.pushNamed(context, RoutUtils.wallet);
-            },
-          ),
-        ),
-        Expanded(
-          child: new Align(
-            alignment: FractionalOffset.bottomCenter,
-            child: Container(
-              color: Colors.black,
-              padding: EdgeInsets.only(left: 32.0),
-              constraints: BoxConstraints.expand(height: 55.0),
-              child: ListTile(
-                title: Text(
-                  'Logout',
-                  style: TextStyle(fontSize: textSize, color: Colors.white),
-                ),
-                leading: ImageIcon(
-                  AssetImage(ImageUtils.logout),
-                  color: Colors.white,
-                ),
-                onTap: () {
-                  // Update the state of the app
-                  // ...
-                  // Then close the drawer
-
-                  Navigator.pop(context);
-                  LocalStorageHelper().saveLoginDetails("");
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                      RoutUtils.splash, (Route<dynamic> route) => false);
-                },
+                ],
               ),
+            ),
+            decoration: BoxDecoration(
+//            color: Colors.black,
+              image: DecorationImage(
+                image: AssetImage(ImageUtils.nav_header_background_phone),
+                fit: BoxFit.fill,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 10.0,
+          ),
+          Padding(
+            padding:
+                EdgeInsets.only(left: 24.0, top: 4.0, bottom: 8.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'Home',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: ImageIcon(
+                AssetImage(ImageUtils.home),
+              ),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'Profile',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: ImageIcon(
+                AssetImage(ImageUtils.profile),
+              ),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+                Navigator.pushNamed(context, RoutUtils.view_profile);
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'ICEs',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: ImageIcon(
+                AssetImage(ImageUtils.ice),
+              ),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+                Navigator.pushNamed(context, RoutUtils.ices);
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'History',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: ImageIcon(
+                AssetImage(ImageUtils.history),
+              ),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+                Navigator.pushNamed(context, RoutUtils.history);
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'Wallet',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: ImageIcon(
+                AssetImage(ImageUtils.wallet),
+              ),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+
+                Navigator.pop(context);
+                Navigator.pushNamed(context, RoutUtils.wallet);
+              },
+            ),
+          ),
+          Expanded(
+            child: new Align(
+              alignment: FractionalOffset.bottomCenter,
+              child: Container(
+                color: Colors.black,
+                padding: EdgeInsets.only(left: 32.0),
+                constraints: BoxConstraints.expand(height: 55.0),
+                child: ListTile(
+                  title: Text(
+                    'Logout',
+                    style: TextStyle(fontSize: textSize, color: Colors.white),
+                  ),
+                  leading: ImageIcon(
+                    AssetImage(ImageUtils.logout),
+                    color: Colors.white,
+                  ),
+                  onTap: () {
+                    // Update the state of the app
+                    // ...
+                    // Then close the drawer
+
+                    Navigator.pop(context);
+                    LocalStorageHelper().saveLoginDetails("");
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                        RoutUtils.splash, (Route<dynamic> route) => false);
+                  },
+                ),
 //              child: RaisedButton(onPressed: (){},
 //                color: Colors.black,
 //                child: new Text('LOGOUT', style: TextStyle(fontSize: 16.0, color: Colors.white),),
 //
 //              ),
+              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
-            drawer: Drawer(child: navigationDrawer()),
-            backgroundColor: Colors.white,
-            appBar: AppBar(
-              iconTheme: IconThemeData(color: Colors.black),
-              backgroundColor: Colors.transparent,
-              elevation: 0.0,
-            ),
-            body: getView()));
+    return FutureBuilder<UserDetails>(
+      future: getDetails(), // a previously-obtained Future<String> or null
+      builder: (BuildContext context, AsyncSnapshot<UserDetails> snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.active:
+          case ConnectionState.waiting:
+            return Container();
+          case ConnectionState.done:
+            return ScopedModel<UserModel>(
+                model: userModel,
+                child: Scaffold(
+                    drawer: Drawer(child: navigationDrawer()),
+                    backgroundColor: Colors.white,
+                    appBar: AppBar(
+                      iconTheme: IconThemeData(color: Colors.black),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0.0,
+                    ),
+                    body: getView()));
+        }
+        return null; // unreachable
+      },
+    );
   }
 
   Widget getView() {
@@ -608,7 +667,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                )
+                ),
+                /* Flexible(
+                  child: textFields(),
+                ),*/
               ],
             ),
           )
@@ -657,24 +719,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ));
   }
 
-  void getDetails() {
+  Future<UserDetails> getDetails() async {
     var profile = UserDetails();
-
     var currentLocation = <String, double>{};
-
     var location = new Location();
 
-// Platform messages may fail, so we use a try/catch PlatformException.
-    try {
+    /*try {
       location.getLocation().then((loc) {
         currentLocation = loc;
-
-//        print(currentLocation["latitude"]);
-//        print(currentLocation["longitude"]);
-//        print(currentLocation["accuracy"]);
-//        print(currentLocation["altitude"]);
-//        print(currentLocation["speed"]);
-//        print(currentLocation["speed_accuracy"]);
 
         APIService()
             .updateLocation(
@@ -683,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 longitude: currentLocation["longitude"])
             .then((success) {
           if (success) {
-            showToast("LOCATION UPDATED");
+//            showToast("LOCATION UPDATED");
           } else {
             showToast(
                 "Error updating location, ensure your location services is turned on and access granted to seclot");
@@ -692,55 +744,72 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } on PlatformException {
       currentLocation = null;
-    }
+    }*/
 
-//    print("DETAILS ==> $details");
+    userModel.setUser(profile.getUserData());
 
-//    userInfo.setUserInf(details);
-
-//    var profile = userInfo.getProfile();
-//    print("NAME ==> ${profile['firstName']}");
-//    print("NAME ==> ${profile['lastName']}");
-
-//    localStorage.getLoginDetails()
-//        .then((details){
-//          print("DETAILS ==> $details");
-
-//          var userInfo  = UserInfo();
-//      var userInfo  = UserInfo.getInstance();
-//          userInfo.setUserInf(details);
-//
-//          var profile = userInfo.getProfile();
-//          print("NAME ==> ${profile.firstName}");
-//          print("NAME ==> ${profile.lastName}");
-
+    return profile;
+//    setState(() {
+//      _name =
+//          "${profile.getUserData().firstName} ${profile.getUserData().lastName}";
 //    });
-
-    setState(() {
-      _name =
-          "${profile.getUserData().firstName} ${profile.getUserData().lastName}";
-    });
   }
 
   void showToast(String message) {
-    /* final snackBar = SnackBar(
-        content: Text(message),
-    action: SnackBarAction(
-    label: 'Close',
-    onPressed: () {
-    // Some code to undo the change!
-    },
-    ),);*/
-
-//    Scaffold.of(context).showSnackBar(snackBar);
     Fluttertoast.showToast(
       msg: message,
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
       timeInSecForIos: 4,
-//        bgcolor: "#e74c3c",
-//        textcolor: '#ffffff'
     );
+  }
+
+  void setupFirebaseMessaging() {
+    /*_firebaseMessaging.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+//        _showItemDialog(message);
+      },
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+//        _navigateToItemDetail(message);
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+//        _navigateToItemDetail(message);
+      },
+    );
+    _firebaseMessaging.requestNotificationPermissions(
+        const IosNotificationSettings(sound: true, badge: true, alert: true));*/
+//    _firebaseMessaging.onIosSettingsRegistered
+//        .listen((IosNotificationSettings settings) {
+//      print("Settings registered: $settings");
+//    });
+    localStorage.hasSentToken().then((sent) {
+      if (!sent) {
+        _firebaseMessaging.getToken().then((String notificationId) {
+//      assert(token != null);
+          if (notificationId != null) {
+            print("Messaging oken => $notificationId");
+            localStorage.getToken().then((token) {
+              if (token.isNotEmpty) {
+                APIService()
+                    .registerNotificationID(token, notificationId)
+                    .then((response) {
+                  print(response.body);
+                  print(response.statusCode);
+
+                  if (response.statusCode == 200) {
+                    localStorage.sentToken();
+                    print("Token sent");
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
   }
 }
 
@@ -832,19 +901,7 @@ class _InputDialogState extends State<InputDialog> {
 
     int maxLength = 1;
 
-    _updateState() {
-      /*_text1 = _controller1.text;
-      _text2 = _controller2.text;
-      _text3 = _controller3.text;
-      _text4 = _controller4.text;
-
-      setState(() {
-        _controller1.text = _text1;
-        _controller2.text = _text2;
-        _controller3.text = _text3;
-        _controller4.text = _text4;
-      });*/
-    }
+    _updateState() {}
 
     var firstTF = new TextField(
         focusNode: _focusNode1,
@@ -868,7 +925,7 @@ class _InputDialogState extends State<InputDialog> {
             });
           }
 
-          print("new value ==> $newVal");
+//          print("new value ==> $newVal");
 
           _updateState();
         });
@@ -946,33 +1003,41 @@ class _InputDialogState extends State<InputDialog> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 
         children: <Widget>[
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: firstTF),
+          Expanded(
+            child: Container(
+              height: height,
+              width: width,
+              margin: margin,
+              decoration: boxDecoration,
+              child: Center(child: firstTF),
+            ),
           ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: secondTF),
+          Expanded(
+            child: Container(
+              height: height,
+              width: width,
+              margin: margin,
+              decoration: boxDecoration,
+              child: Center(child: secondTF),
+            ),
           ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: thirdTF),
+          Expanded(
+            child: Container(
+              height: height,
+              width: width,
+              margin: margin,
+              decoration: boxDecoration,
+              child: Center(child: thirdTF),
+            ),
           ),
-          Container(
-            height: height,
-            width: width,
-            margin: margin,
-            decoration: boxDecoration,
-            child: Center(child: fourthTF),
+          Expanded(
+            child: Container(
+              height: height,
+              width: width,
+              margin: margin,
+              decoration: boxDecoration,
+              child: Center(child: fourthTF),
+            ),
           ),
         ],
       ),

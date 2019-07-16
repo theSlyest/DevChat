@@ -62,6 +62,9 @@ class _SplashScreenState extends State<SplashScreen> {
                     error = true;
                   });
                 }
+              }).catchError((error) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    RoutUtils.login, (Route<dynamic> route) => false);
               });
             } else {
               Navigator.of(context).pushNamedAndRemoveUntil(

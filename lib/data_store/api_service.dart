@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:http_parser/http_parser.dart';
 import 'package:async/async.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
@@ -37,14 +38,14 @@ class APIService {
 
     final response = await http.get(OTP_URL);
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+      // print("API REQUEST WAS SUCCESSFUL");
+      // print("${response.body}");
 
       return true;
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.body}");
-      print("${response.statusCode}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.body}");
+      // print("${response.statusCode}");
 
       return false;
     }
@@ -55,14 +56,14 @@ class APIService {
 
     final response = await http.get(OTP_URL);
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+      // print("API REQUEST WAS SUCCESSFUL");
+      // print("${response.body}");
 
       return true;
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.body}");
-      print("${response.statusCode}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.body}");
+      // print("${response.statusCode}");
 
       return false;
     }
@@ -73,11 +74,11 @@ class APIService {
         "$_BASE_URL/user/verify-otp?phoneNumber=$phoneNumber&otp=$OTP";
     final response = await http.get(LOGIN_URL);
 
-    print(LOGIN_URL);
+    // print(LOGIN_URL);
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+      // print("API REQUEST WAS SUCCESSFUL");
+      // print("${response.body}");
 
       var jsonData = json.decode(response.body);
 
@@ -87,15 +88,16 @@ class APIService {
 
       return 0;
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.statusCode}");
+      // print("${response.body}");
 
       return -1;
     }
   }
 
-  Future<String> performLogin(String phone, String pin, bool rememberMe) async {
+  /*Future<http.Response> performLogin(
+      String phone, String pin, bool rememberMe) async {
     final LOGIN_URL = "$_BASE_URL/user/login";
 
     var body = Map<String, String>();
@@ -108,8 +110,40 @@ class APIService {
       return http.Response(json.encode({"message": "timeout"}), 3000);
     });
 
+    if (rememberMe) {
+      LocalStorageHelper().savePin(pin);
+    }
+
+    LocalStorageHelper().savePhone(phone);
+
+    var resBody = json.decode(response.body);
+    var responseBody = json.decode(response.body);
+    responseBody["profile"]["phoneNumber"] = phone;
+
+    var userDetails = UserDetails();
+    userDetails.setUserData(resBody);
+    userDetails.getUserData().token = resBody["token"];
+
+    LocalStorageHelper().saveToken(resBody["token"]);
+    LocalStorageHelper().saveLoginDetails(json.encode(responseBody));
+    LocalStorageHelper().savePhoneAndPin(json.encode(body));
+
+    return response;
+  }*/
+
+  Future<String> performLogin(String phone, String pin, bool rememberMe) async {
+    final URL = "$_BASE_URL/user/login";
+
+    print("performing login");
+
+    var body = Map<String, String>();
+    body["phoneNumber"] = phone;
+    body["pin"] = pin;
+
+    var response = await http.post(URL, body: body);
+
     if (response.statusCode == 200) {
-//      print(response.body);
+//      // print(response.body);
 
       var resBody = json.decode(response.body);
 
@@ -123,9 +157,9 @@ class APIService {
         LocalStorageHelper().saveToken(resBody["token"]);
         var responseBody = json.decode(response.body);
 
-//        print(responseBody["token"]);
+//        // print(responseBody["token"]);
         responseBody["profile"]["phoneNumber"] = phone;
-//        print(responseBody);
+//        // print(responseBody);
         LocalStorageHelper().savePhone(phone);
         LocalStorageHelper().savePin(pin);
         LocalStorageHelper().saveLoginDetails(json.encode(responseBody));
@@ -139,7 +173,10 @@ class APIService {
 
       return "";
     } else {
-      return "Login failed, please check your network and try again";
+      print(response.body);
+      print(response.statusCode);
+
+      throw Exception("Login failed, please check your network and try again");
     }
   }
 
@@ -153,9 +190,9 @@ class APIService {
         body: json.encode(body), headers: header);
 
     if (response.statusCode == 200) {
-//      print(response.body);
+//      // print(response.body);
 
-      print("API REQUEST WAS SUCCESSFUL");
+      // print("API REQUEST WAS SUCCESSFUL");
       var resBody = json.decode(response.body);
 
       var userDetails = UserDetails();
@@ -164,21 +201,21 @@ class APIService {
 
       LocalStorageHelper().saveToken(resBody["token"]);
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.body}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.body}");
     }
 
     return response;
 
 //    if (response.statusCode == 200) {
-//      print("API REQUEST WAS SUCCESSFUL");
-//      print("${response.body}");
+//      // print("API REQUEST WAS SUCCESSFUL");
+//      // print("${response.body}");
 //
 //      LocalStorageHelper().saveAccountDetails(response.body);
 //      return true;
 //    } else {
-//      print("API REQUEST FAILED WOEFULLY");
-//      print("${response.body}");
+//      // print("API REQUEST FAILED WOEFULLY");
+//      // print("${response.body}");
 //
 //      return false;
 //    }
@@ -189,25 +226,25 @@ class APIService {
   Future<http.Response> getUserProfile(String token) async {
     final CREATE_ACCOUNT_URL = "$_BASE_URL/user/profile";
 
-    print(CREATE_ACCOUNT_URL);
-    print(token);
+    // print(CREATE_ACCOUNT_URL);
+    // print(token);
 
     var header = Map<String, String>();
     header["Token"] = token;
     final response = await http.get(CREATE_ACCOUNT_URL, headers: header);
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-//      print("${response.body}");
+      // print("API REQUEST WAS SUCCESSFUL");
+//      // print("${response.body}");
 
 //      LocalStorageHelper().saveAccountDetails(response.body);
 
-//      print(response.body);
+//      // print(response.body);
       UserDetails().updateUserData(json.decode(response.body));
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.statusCode}");
+      // print("${response.body}");
     }
 
     return response;
@@ -216,8 +253,8 @@ class APIService {
   }
 
   Future<bool> updateUser(String token, UserDTO user) async {
-    print("INSIDE UPDATE PROFILE");
-    print("USER DETAILS ${user.toJson()}");
+    // print("INSIDE UPDATE PROFILE");
+    // print("USER DETAILS ${user.toJson()}");
 
     final UPDATE_PROFILE_URL = "$_BASE_URL/user/profile";
 
@@ -228,11 +265,11 @@ class APIService {
     final response = await http.put(UPDATE_PROFILE_URL,
         headers: header, body: json.encode(user.toJson()));
 
-    print("SENDING REQUEST NOW IN UPDATE PROFILE");
+    // print("SENDING REQUEST NOW IN UPDATE PROFILE");
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+      // print("API REQUEST WAS SUCCESSFUL");
+      // print("${response.body}");
 
       UserDetails().updateUserData(json.decode(response.body));
 
@@ -240,9 +277,9 @@ class APIService {
 
       return true;
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+      // print("API REQUEST FAILED WOEFULLY");
+      // print("${response.statusCode}");
+      // print("${response.body}");
 
       return false;
     }
@@ -250,9 +287,54 @@ class APIService {
 //    return response;
   }
 
+  Future<void> updateProfileImage(
+    String token,
+    File image,
+    Function(bool, String) onComplete,
+  ) async {
+    final UPDATE_PROFILE_URL = "$_BASE_URL/user/profile/picture";
+
+    final request = http.MultipartRequest("PUT", Uri.parse(UPDATE_PROFILE_URL));
+
+    var header = Map<String, String>();
+    header["Token"] = token;
+//    header["Content-Type"] = "application/x-www-form-urlencoded";
+
+    http.MultipartFile.fromPath('image', image.path,
+            contentType: MediaType('image', 'png'))
+        .then((file) async {
+      request.files.add(file);
+      request.headers.addAll(header);
+      final response = await http.Response.fromStream(
+        await request.send(),
+      );
+
+      if (response.statusCode == 200) {
+        // print("API REQUEST WAS SUCCESSFUL");
+        // print("${response.body}");
+
+        UserDetails().updateUserData(json.decode(response.body));
+
+//      LocalStorageHelper().saveAccountDetails(response.body);
+
+        onComplete(true, response.body);
+      } else {
+        /* // print("API REQUEST FAILED WOEFULLY");
+        // print("${response.statusCode}");
+        // print("${response.body}");*/
+
+        onComplete(false, response.body);
+      }
+    }).catchError((error) {
+      onComplete(false, "");
+    });
+
+//    return response;
+  }
+
   Future<bool> updateLocation(
       {String token, double latitude, double longitude}) async {
-    print("INSIDE UPDATE LOCATION");
+//    // print("INSIDE UPDATE LOCATION");
 
     final UPDATE_PROFILE_URL = "$_BASE_URL/user/profile";
 
@@ -266,11 +348,11 @@ class APIService {
     final response = await http.put(UPDATE_PROFILE_URL,
         headers: header, body: json.encode(body));
 
-    print("SENDING LOCATION DATA NOW IN UPDATE PROFILE");
+//    // print("SENDING LOCATION DATA NOW IN UPDATE PROFILE");
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+//      // print("API REQUEST WAS SUCCESSFUL");
+//      // print("${response.body}");
 
       UserDetails().updateUserData(json.decode(response.body));
 
@@ -278,76 +360,12 @@ class APIService {
 
       return true;
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+//      // print("API REQUEST FAILED WOEFULLY");
+//      // print("${response.statusCode}");
+//      // print("${response.body}");
 
       return false;
     }
-
-//    return response;
-  }
-
-  Future<String> updateImage(String token, File imageFile) async {
-    print("Uploading image!");
-
-    print(imageFile.path);
-    print(token);
-
-    final UPDATE_PROFILE_IMAGE_URL = "$_BASE_URL/user/profile/picture";
-
-    Map<String, dynamic> headers = Map();
-
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    headers["Token"] = token;
-
-    /*final response = await http.put(
-      UPDATE_PROFILE_IMAGE_URL,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Token': token
-      },
-      body: {
-        'image': 'data:image/png;base64,' +
-            base64Encode(imageFile.readAsBytesSync()),
-      },
-    );*/
-
-    print("BASE NAME => ${basename(imageFile.path)}");
-
-    Dio dio = new Dio();
-    FormData formdata = new FormData();
-    formdata.add(
-//        "image", new UploadFileInfo(imageFile, basename(imageFile.path)));
-        "image",
-        new UploadFileInfo(imageFile, 'image.png'));
-
-    try {
-      //404
-      await dio
-          .put("/user/profile/picture",
-              data: formdata,
-              options: Options(
-                  headers: headers,
-                  baseUrl: _BASE_URL,
-                  method: 'PUT',
-                  responseType: ResponseType.JSON))
-          .then((response) {
-        print(response.data);
-        return response.toString();
-      }).catchError((error) {
-        print("ERROR OCCURED ${(error as DioError).message}");
-        return "";
-      });
-    } on DioError catch (e) {
-      if (e.response != null) {
-        print(e.message);
-      } else {
-        print(e.message);
-      }
-    }
-
-//    print(response);
 
 //    return response;
   }
@@ -361,39 +379,39 @@ class APIService {
   Future<http.Response> fundAccount(
       String transactionReference, String token) async {
     final FUND_WALLET = "$_BASE_URL/user/fund-wallet";
-    print("ENDPOING ==> $FUND_WALLET");
+//    // print("ENDPOING ==> $FUND_WALLET");
 
-    print("INSIDE FUND TOKEN");
-    print("TOKKEN ==> $token");
-    print("TRANSACTION REF ==> $transactionReference");
+//    // print("INSIDE FUND TOKEN");
+//    // print("TOKKEN ==> $token");
+//    // print("TRANSACTION REF ==> $transactionReference");
 
     var header = Map<String, String>();
     header["Token"] = token;
     header["Content-Type"] = "application/json";
 
-    print("HEADER ==> $header");
+//    // print("HEADER ==> $header");
 
     var body = Map<String, String>();
     body["transactionReference"] = transactionReference;
 
-    print("BODY ==> $body");
+//    // print("BODY ==> $body");
 
     final response =
         await http.post(FUND_WALLET, headers: header, body: json.encode(body));
 
-    print("SENDING REQUEST NOW IN FUND_WALLET");
+//    // print("SENDING REQUEST NOW IN FUND_WALLET");
 
 //    var encode = json.decode(response.body);
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+//      // print("API REQUEST WAS SUCCESSFUL");
+//      // print("${response.body}");
 
 //      getUserProfile(token);
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+//      // print("API REQUEST FAILED WOEFULLY");
+//      // print("${response.statusCode}");
+//      // print("${response.body}");
     }
 
     return response;
@@ -401,36 +419,36 @@ class APIService {
 
   Future<http.Response> updateSubscription(String plan, String token) async {
     final FUND_WALLET = "$_BASE_URL/user/profile/subscription";
-    print("ENDPOINT ==> $FUND_WALLET");
+//    // print("ENDPOINT ==> $FUND_WALLET");
 
-    print("INSIDE UPDATE SUBSCRIPTION TOKEN");
-    print("TOKKEN ==> $token");
+//    // print("INSIDE UPDATE SUBSCRIPTION TOKEN");
+//    // print("TOKKEN ==> $token");
 
     var header = Map<String, String>();
     header["Token"] = token;
     header["Content-Type"] = "application/json";
 
-    print("HEADER ==> $header");
+//    // print("HEADER ==> $header");
 
     var body = Map<String, String>();
     body["plan"] = plan;
 
-    print("BODY ==> $body");
+//    // print("BODY ==> $body");
 
     final response =
         await http.put(FUND_WALLET, headers: header, body: json.encode(body));
 
-    print("SENDING REQUEST NOW IN FUND_WALLET");
+//    // print("SENDING REQUEST NOW IN FUND_WALLET");
 
 //    var encode = json.decode(response.body);
 
     if (response.statusCode == 200) {
-      print("API REQUEST WAS SUCCESSFUL");
-      print("${response.body}");
+//      // print("API REQUEST WAS SUCCESSFUL");
+//      // print("${response.body}");
     } else {
-      print("API REQUEST FAILED WOEFULLY");
-      print("${response.statusCode}");
-      print("${response.body}");
+//      // print("API REQUEST FAILED WOEFULLY");
+//      // print("${response.statusCode}");
+//      // print("${response.body}");
     }
 
     return response;
@@ -443,7 +461,7 @@ class APIService {
   //====================================================================================================================//
 
   Future<http.Response> saveIce(String name, String phone, String token) async {
-    print("INSIDE SAVE TOKEN");
+    // print("INSIDE SAVE TOKEN");
 
     final SAVE_IC = "$_BASE_URL/user/ice";
 
@@ -458,7 +476,7 @@ class APIService {
     final response =
         await http.post(SAVE_IC, headers: header, body: json.encode(body));
 
-    print("SENDING REQUEST NOW IN SAVE IC");
+    // print("SENDING REQUEST NOW IN SAVE IC");
 
 //    var encode = json.decode(response.body);
     return response;
@@ -470,8 +488,9 @@ class APIService {
     var header = Map<String, String>();
     header["Token"] = token;
 
-    print("HEADER ==> $header");
+    // print("HEADER ==> $header");
 
+    print("Getting ice...");
     final response = await http.get(
       UPDATE_ICE,
       headers: header,
@@ -483,7 +502,7 @@ class APIService {
 
   Future<http.Response> updateIce(
       {String iceId, bool pause, String token}) async {
-    print("UPDATING ICE");
+    // print("UPDATING ICE");
 
     final UPDATE_ICE = "$_BASE_URL/user/ice/$iceId";
 
@@ -526,20 +545,21 @@ class APIService {
 
     final response = await http.post(SEND_DISTRESS_CALL, headers: header);
 
-    print(response);
+    // print(response);
 
     var encode = json.decode(response.body);
+    print(encode);
     return response;
 //        if (response.statusCode == 200) {
-//          print("API REQUEST WAS SUCCESSFUL");
-//          print("${response.body}");
+//          // print("API REQUEST WAS SUCCESSFUL");
+//          // print("${response.body}");
 //
 //          return encode['message'];
 //        } else {
-//          print("API REQUEST FAILED WOEFULLY");
-//          print("${response.statusCode}");
-//          print("${response.statusCode}");
-//          print("${response.body}");
+//          // print("API REQUEST FAILED WOEFULLY");
+//          // print("${response.statusCode}");
+//          // print("${response.statusCode}");
+//          // print("${response.body}");
 //
 //          return encode['message'];
 //        }
@@ -552,6 +572,31 @@ class APIService {
     header["Token"] = token;
 
     final response = await http.get(FETCH_DISTRESS_CALL, headers: header);
+
+    return response;
+
+    var encode = json.decode(response.body);
+    return encode;
+  }
+
+//=================NOTIFICATION
+
+  Future<http.Response> registerNotificationID(
+      String token, String notificationId) async {
+    final REGISTER_NOTIFICATION_ID = "$_BASE_URL/user/notification-id";
+
+    var header = Map<String, String>();
+    header["Content-Type"] = "application/json";
+    header["Token"] = token;
+
+    var body = {'notificationId': notificationId};
+    print(body);
+
+    var encode1 = json.encode(body);
+    print(encode1);
+
+    final response = await http.put(REGISTER_NOTIFICATION_ID,
+        headers: header, body: encode1);
 
     return response;
 

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.seclotmobile">
+    package="com.seclotmobile">
 
     <!-- The INTERNET permission is required for development. Specifically,
          flutter needs it to communicate with the running application
@@ -16,8 +16,8 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="seclot_mobile"
-        android:icon="@mipmap/ic_launcher">
+        android:label="Seclot"
+        android:icon="@mipmap/launcher_icon">
 
         <!--<meta-data android:name="com.google.android.maps.v2.API_KEY"-->
             <!--android:value="AIzaSyBRTlfkTgxhu0f5-GovEpKviJUDyfqyEv8"/>-->
@@ -48,8 +48,20 @@
             </intent-filter>
         </activity>
 
-        <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyCmwp39gsOOET1A0i8edyZVhqCzAYRbhrE"/>
+       <!-- <meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="AIzaSyAMttZPl6ZHtz56c3eLIFiy-5Z_wZYekPY"/>
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
+-->
+        <!--<meta-data-->
+            <!--android:name="com.google.android.geo.API_KEY"-->
+            <!--android:value="AIzaSyAMttZPl6ZHtz56c3eLIFiy-5Z_wZYekPY" />-->
+
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCV7tym2ZRSxOvDKoB19Q6tdnzw0t9wgqQ"/>
+
+        <!--<meta-data-->
+                <!--android:name="com.google.android.geo.API_KEY"-->
+                <!--android:value="AIzaSyAMttZPl6ZHtz56c3eLIFiy-5Z_wZYekPY"/>-->
+                <!--android:value="AIzaSyDwbZW8HVXFZvj_6LfEaSZwWfshqzkoU2w"/>-->
     </application>
 </manifest>

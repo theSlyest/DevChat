@@ -1,4 +1,4 @@
-package com.example.seclotmobile
+package com.seclotmobile
 
 import android.os.Bundle
 

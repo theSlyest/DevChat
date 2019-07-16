@@ -13,7 +13,7 @@ import '../data_store/local_storage_helper.dart';
 import '../utils/color_conts.dart';
 import '../utils/margin_utils.dart';
 import '../utils/routes_utils.dart';
-import '../views/create_profile.dart';
+import '../views/create_edit_profile.dart';
 
 class NewUserScreen extends StatefulWidget {
 //  const OTPScreen({this.phoneNumber});
@@ -49,7 +49,7 @@ class _NewUserScreenState extends State<NewUserScreen> {
   void initState() {
     loading = false;
     FlutterPlacesDialog.setGoogleApiKey(
-        "AIzaSyBRTlfkTgxhu0f5-GovEpKviJUDyfqyEv8");
+        "AIzaSyCV7tym2ZRSxOvDKoB19Q6tdnzw0t9wgqQ");
 //    getLocation();
   }
 
@@ -552,8 +552,8 @@ class _NewUserScreenState extends State<NewUserScreen> {
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         timeInSecForIos: 4,
-        bgcolor: "#e74c3c",
-        textcolor: '#ffffff');
+        backgroundColor: Colors.grey,
+        textColor: Colors.white);
 
     Future.delayed(const Duration(seconds: 5), () {
       Navigator.of(context).pushNamedAndRemoveUntil(

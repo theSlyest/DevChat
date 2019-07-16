@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:seclot/utils/routes_utils.dart';
-import 'package:paystack_sdk/paystack_sdk.dart';
 import '../../data_store/user_details.dart';
 import '../../data_store/api_service.dart';
 import '../../data_store/local_storage_helper.dart';
@@ -125,7 +124,7 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
   Future<void> initPaystack() async {
     String paystackKey = "pk_test_71cb8fa98c03c73d3ff040d7ba712af4921b3bf9";
     try {
-      await PaystackSDK.initialize(paystackKey);
+//      await PaystackSDK.initialize(paystackKey);
       // Paystack is ready for use in receiving payments
       paymentReady = true;
     } on PlatformException {
@@ -337,50 +336,50 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
 
     paymentReady = false;
     // pass card number, cvc, expiry month and year to the Card constructor function
-    var card = PaymentCard(
-        _cardNumber, _ccv, int.parse(_expDateMonth), int.parse(_expDateYear));
+//    var card = PaymentCard(
+//        _cardNumber, _ccv, int.parse(_expDateMonth), int.parse(_expDateYear));
 
     // create a transaction with the payer's email and amount (in kobo)
-    var transaction = PaystackTransaction(_email, int.parse(_amount));
+//    var transaction = PaystackTransaction(_email, int.parse(_amount));
 
     // debit the card (using Javascript style promises)
-    transaction.chargeCard(card).then((transactionReference) {
-      // payment successful! You should send your transaction request to your server for validation
-      print("Transaction Ref => $transactionReference");
-
-      APIService.getInstance()
-          .fundAccount(
-              "$transactionReference", UserDetails().getUserData().token)
-          .then((response) {
-        setState(() {
-          _saving_changes = false;
-        });
-
-        if (response.statusCode == 200) {
-          showToast("Transaction successful", context);
-
-          Future.delayed(Duration(seconds: 2)).then((x) {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-                RoutUtils.home, (Route<dynamic> route) => false);
-          });
-        } else {
-          showToast('Transaciton failed, please try your network and try again',
-              context);
-        }
-      });
-
-      paymentReady = true;
-    }).catchError((e) {
-      // oops, payment failed, a readable error message should be in e.message
-      print(e.message);
-
-      setState(() {
-        _saving_changes = false;
-      });
-
-      showToast("${e.message}", context);
-      paymentReady = true;
-    });
+//    transaction.chargeCard(card).then((transactionReference) {
+//      // payment successful! You should send your transaction request to your server for validation
+//      print("Transaction Ref => $transactionReference");
+//
+//      APIService.getInstance()
+//          .fundAccount(
+//              "$transactionReference", UserDetails().getUserData().token)
+//          .then((response) {
+//        setState(() {
+//          _saving_changes = false;
+//        });
+//
+//        if (response.statusCode == 200) {
+//          showToast("Transaction successful", context);
+//
+//          Future.delayed(Duration(seconds: 2)).then((x) {
+//            Navigator.of(context).pushNamedAndRemoveUntil(
+//                RoutUtils.home, (Route<dynamic> route) => false);
+//          });
+//        } else {
+//          showToast('Transaciton failed, please try your network and try again',
+//              context);
+//        }
+//      });
+//
+//      paymentReady = true;
+//    }).catchError((e) {
+//      // oops, payment failed, a readable error message should be in e.message
+//      print(e.message);
+//
+//      setState(() {
+//        _saving_changes = false;
+//      });
+//
+//      showToast("${e.message}", context);
+//      paymentReady = true;
+//    });
   }
 
   void showToast(String message, BuildContext context) {

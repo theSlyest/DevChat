@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:seclot/data_store/api_service.dart';
+import 'package:seclot/data_store/bloc/ice_bloc/ice_bloc.dart';
+import 'package:seclot/model/ice.dart';
 import '../data_store/local_storage_helper.dart';
 import '../data_store/user_details.dart';
 import '../utils/color_conts.dart';
@@ -19,9 +21,6 @@ class _IceScreenState extends State<IceScreen> {
   var _errorOccured = false;
   var _token = "";
 
-  List<Contact> personalIce = [];
-  List<Contact> cooperateIce = [];
-
   @override
   void initState() {
     super.initState();
@@ -30,51 +29,14 @@ class _IceScreenState extends State<IceScreen> {
   }
 
   void fetchData() {
-    setState(() {
-      _loading = true;
-    });
-
     LocalStorageHelper().getToken().then((token) {
       _token = token;
 
       APIService().getIce(token).then((iceResponse) {
-        if (iceResponse.statusCode != 200) {
-          setState(() {
-            _errorOccured = true;
-          });
-
-          return;
-        }
-
-        loadIces(iceResponse);
-
-        setState(() {
-          _loading = false;
-        });
+        print("In response");
+        iceBloc.setIce(iceResponse);
       });
     });
-  }
-
-  void loadIces(var iceResponse) {
-    Map<String, dynamic> resBody = json.decode(iceResponse.body);
-    print(resBody);
-
-    List<dynamic> personalIceJsonList = resBody['userICEs'];
-    List<dynamic> cooperateIceJsonList = resBody['organizationICEs'];
-
-//    print(personalIceJsonList);
-//    print(cooperateIceJsonList);
-
-    personalIce.clear();
-    for (Map<String, dynamic> ice in personalIceJsonList) {
-//      print(ice);
-      personalIce.add(Contact.fromJson(ice));
-    }
-
-    cooperateIce.clear();
-    for (Map<String, dynamic> ice in cooperateIceJsonList) {
-      cooperateIce.add(Contact.fromJson(ice));
-    }
   }
 
   void _showDialog() {
@@ -92,7 +54,7 @@ class _IceScreenState extends State<IceScreen> {
         });
   }
 
-  void resumeIce(Contact ice) {
+  void resumeIce(IceDTO ice) {
     APIService()
         .updateIce(iceId: ice.id, pause: false, token: _token)
         .then((response) {
@@ -101,26 +63,14 @@ class _IceScreenState extends State<IceScreen> {
       print(response.statusCode);
       print(response.body);
 
-      if (response.statusCode != 200) {
-        //show error toast
-        return;
-      }
-
-      setState(() {
-        _loading = true;
-      });
-
-      loadIces(response);
-
-      setState(() {
-        _loading = false;
-      });
+      iceBloc.setIce(response);
     });
   }
 
   var pausing = false;
   var pauseError = "";
-  void _showConfirmPauseDialog(Contact ice) {
+
+  void _showConfirmPauseDialog(IceDTO ice) {
     setState(() {
       pausing = false;
       pauseError = "";
@@ -166,7 +116,7 @@ class _IceScreenState extends State<IceScreen> {
         });
   }
 
-  Widget pauseButton(Contact ice) {
+  Widget pauseButton(IceDTO ice) {
     return pausing
         ? CircularProgressIndicator()
         : RaisedButton(
@@ -178,32 +128,12 @@ class _IceScreenState extends State<IceScreen> {
               APIService()
                   .updateIce(iceId: ice.id, pause: true, token: _token)
                   .then((response) {
-                pausing = false;
+                setState(() {
+                  pausing = false;
+                });
                 print("HANDLING RESPONSE");
 
-                if (response.statusCode != 200) {
-                  //show error toast
-                  setState(() {
-                    pauseError = response.body;
-                  });
-
-                  return;
-                }
-
-                setState(() {
-                  pauseError = "";
-                });
-
-                Navigator.of(context).pop();
-                setState(() {
-                  _loading = true;
-                });
-
-                loadIces(response);
-
-                setState(() {
-                  _loading = false;
-                });
+                iceBloc.setIce(response);
               });
             }),
             child: Text("PAUSE ICE"),
@@ -213,7 +143,7 @@ class _IceScreenState extends State<IceScreen> {
 
   var deleting = false;
   var deletError = "";
-  void _showConfrimDeleteDialog(Contact ice) {
+  void _showConfrimDeleteDialog(IceDTO ice) {
     setState(() {
       deleting = false;
       deletError = "";
@@ -259,7 +189,7 @@ class _IceScreenState extends State<IceScreen> {
         });
   }
 
-  Widget deleteButton(Contact ice) {
+  Widget deleteButton(IceDTO ice) {
     return deleting
         ? CircularProgressIndicator()
         : RaisedButton(
@@ -270,31 +200,9 @@ class _IceScreenState extends State<IceScreen> {
 
               APIService().deleteIce(ice.id, _token).then((response) {
                 deleting = false;
-                print("HANDLING RESPONSE");
-
-                if (response.statusCode != 200) {
-                  //show error toast
-                  setState(() {
-                    deletError = response.body;
-                  });
-
-                  return;
-                }
-
-                setState(() {
-                  deletError = "";
-                });
 
                 Navigator.of(context).pop();
-                setState(() {
-                  _loading = true;
-                });
-
-                loadIces(response);
-
-                setState(() {
-                  _loading = false;
-                });
+                iceBloc.setIce(response);
               });
             }),
             child: Text("DELETE ICE"),
@@ -304,102 +212,115 @@ class _IceScreenState extends State<IceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-          key: _snackKey,
-          backgroundColor: Colors.white,
-          floatingActionButton: new FloatingActionButton(
-            backgroundColor: Colors.black,
-            onPressed: () {
-              _showDialog();
-            },
-            tooltip: 'Increment',
-            child: new Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
+    IceBloc iceBloc = IceProvider.of(context);
+
+    return Scaffold(
+        key: _snackKey,
+        backgroundColor: Colors.white,
+        floatingActionButton: new FloatingActionButton(
+          backgroundColor: Colors.black,
+          onPressed: () {
+            _showDialog();
+          },
+          tooltip: 'Increment',
+          child: new Icon(
+            Icons.add,
+            color: Colors.white,
           ),
-          appBar: AppBar(
-            iconTheme: IconThemeData(color: Colors.white),
-            title: Text(
-              'ICE',
-              textAlign: TextAlign.left,
-            ),
+        ),
+        appBar: AppBar(
+          iconTheme: IconThemeData(color: Colors.white),
+          title: Text(
+            'ICE',
+            textAlign: TextAlign.left,
           ),
-          body: getLayout()),
-    );
+        ),
+        body: getLayout());
   }
 
   Widget getLayout() {
-    if (_loading) {
-      return Center(
-          child: Container(
-              height: 100.0, width: 100.0, child: CircularProgressIndicator()));
-    } else if (_errorOccured) {
-      return Container(
-        padding: EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              "Error fetching data from server, please check your network and click retry",
-              textAlign: TextAlign.center,
-              style: TextStyle(),
-            ),
-            SizedBox(
-              height: 16.0,
-            ),
-            Text(
-              "[If problem persists, please logout and login again]",
-              style: TextStyle(fontSize: 12.0),
-            ),
-            SizedBox(
-              height: 16.0,
-            ),
-            RaisedButton(
-                onPressed: (() {
-                  fetchData();
-                }),
-                child: Text(
-                  "RETRY",
-                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-                ))
-          ],
-        ),
-      );
-    } else {
-      if (personalIce.isEmpty && cooperateIce.isEmpty) {
-        return Container(
-          padding: EdgeInsets.all(24.0),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  "You have not added an ICE yet",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+    return StreamBuilder(
+        stream: iceBloc.userIces,
+        builder: (BuildContext context, AsyncSnapshot<IceDAO> snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+                child: Container(
+                    height: 100.0,
+                    width: 100.0,
+                    child: CircularProgressIndicator()));
+          } else if (snapshot.hasError) {
+            return Container(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    "Error fetching data from server, please check your network and click retry",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(),
+                  ),
+                  SizedBox(
+                    height: 16.0,
+                  ),
+                  Text(
+                    "[If problem persists, please logout and login again]",
+                    style: TextStyle(fontSize: 12.0),
+                  ),
+                  SizedBox(
+                    height: 16.0,
+                  ),
+                  RaisedButton(
+                      onPressed: (() {
+                        fetchData();
+                      }),
+                      child: Text(
+                        "RETRY",
+                        style: TextStyle(
+                            fontSize: 16.0, fontWeight: FontWeight.bold),
+                      ))
+                ],
+              ),
+            );
+          } else {
+//            if (snapshot.data == null) {
+//              return Container();
+//            }
+
+            var iceDao = snapshot.data;
+
+            if (iceDao.personalIce.isEmpty && iceDao.cooperateIce.isEmpty) {
+              return Container(
+                padding: EdgeInsets.all(24.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        "You have not added an ICE yet",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 20.0),
+                      ),
+                      SizedBox(
+                        height: 14.0,
+                      ),
+                      Text(
+                        "[Tap on the + button to add ICEs]",
+                        style: TextStyle(fontSize: 14.0),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(
-                  height: 14.0,
-                ),
-                Text(
-                  "[Tap on the + button to add ICEs]",
-                  style: TextStyle(fontSize: 14.0),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      return _IceContactList();
-    }
+              );
+            }
+            return _IceContactList(iceDao);
+          }
+        });
   }
 
-  Widget _IceContactList() {
+  Widget _IceContactList(IceDAO iceDao) {
     return ListView(
       children: [
         Container(
@@ -409,7 +330,7 @@ class _IceScreenState extends State<IceScreen> {
               'PERSONAL ICE',
               style: TextStyle(fontSize: 18.0, color: Colors.black),
             )),
-        _ListView(personalIce),
+        _ListView(iceDao.personalIce),
         Container(
             color: ColorUtils.light_gray,
             padding: EdgeInsets.only(top: 24.0, bottom: 16.0, left: 24.0),
@@ -417,18 +338,18 @@ class _IceScreenState extends State<IceScreen> {
               'COOPERATE ICE',
               style: TextStyle(fontSize: 18.0, color: Colors.black),
             )),
-        _ListView(cooperateIce),
+        _ListView(iceDao.cooperateIce),
       ],
     );
   }
 
-  Widget _ListView(List<Contact> contactList) {
+  Widget _ListView(List<IceDTO> contactList) {
     return ListView.builder(
         shrinkWrap: true,
         physics: ClampingScrollPhysics(),
         itemCount: contactList.length,
         itemBuilder: (BuildContext content, int index) {
-          Contact contact = contactList[index];
+          IceDTO contact = contactList[index];
 
           return Padding(
             padding: EdgeInsets.all(16.0),
@@ -497,7 +418,7 @@ class _IceScreenState extends State<IceScreen> {
         });
   }
 
-  Widget getPausedIconButton(Contact ice) {
+  Widget getPausedIconButton(IceDTO ice) {
     return ice.paused
         ? IconButton(
             icon: Icon(Icons.play_arrow),
@@ -657,7 +578,7 @@ class _AddICeDialogState extends State<AddICeDialog> {
                       _saving_changes = false;
                     });
                   } else {
-                    print(token);
+//                    print(token);
 
                     APIService.getInstance()
                         .saveIce(_name, _phone, token)
@@ -665,17 +586,25 @@ class _AddICeDialogState extends State<AddICeDialog> {
                       _saving_changes = false;
 
                       if (response.statusCode != 200) {
-                        _errorMessage = response.body;
+                        _errorMessage = json.decode(response.body)['message'];
 
                         setState(() {
                           _show_error = true;
                         });
 
                         return;
+                      } else {
+                        iceBloc.setIce(response);
                       }
 
                       Navigator.of(context).pop();
                       //done
+                    }).catchError((error) {
+                      _errorMessage =
+                          "Error saving changes, check your internet and try again";
+                      setState(() {
+                        _show_error = true;
+                      });
                     });
                   }
                 });
@@ -689,66 +618,3 @@ class _AddICeDialogState extends State<AddICeDialog> {
           );
   }
 }
-
-class Contact {
-  String id;
-  String name;
-  String phoneNumber;
-  bool paused;
-  int dateAdded;
-
-  Contact.fromJson(Map<String, dynamic> info)
-      : id = info.containsKey("id") ? info["id"] : "",
-        name = info.containsKey("name") ? info["name"] : "",
-        phoneNumber =
-            info.containsKey("phoneNumber") ? info["phoneNumber"] : "",
-        paused = info.containsKey("paused") ? info["paused"] : false,
-        dateAdded = info.containsKey("dateAdded") ? info["dateAdded"] : 0;
-}
-
-class ContactListTile extends ListTile {
-  static var diameter = 50.0;
-  static var backgroundColor = Colors.black;
-
-  ContactListTile(Contact contact)
-      : super(
-            title: Text(
-              contact.name,
-              style: TextStyle(color: Colors.black),
-            ),
-            subtitle: Text(
-              contact.phoneNumber,
-              style: TextStyle(color: Colors.grey),
-            ),
-            leading: Container(
-              width: diameter,
-              height: diameter,
-              decoration: new BoxDecoration(
-                // Circle shape
-                shape: BoxShape.circle,
-//          color: backgroundColor,
-                // The border you want
-                border: new Border.all(
-                  width: 2.0,
-                  color: Colors.grey,
-                ),
-                // The shadow you want
-              ),
-              child: Center(
-                child: Text(
-                  contact.name[0],
-                  style: TextStyle(fontSize: 24.0, color: Colors.grey),
-                ),
-              ),
-            ));
-}
-
-List<Contact> allContacts = [
-//  Contact(name: 'Isa Tusa', phoneNumber: 'isa.tusa@me.com'),
-//  Contact(name: 'Racquel Ricciardi', phoneNumber: 'racquel.ricciardi@me.com'),
-//  Contact(name: 'Teresita Mccubbin', phoneNumber: 'teresita.mccubbin@me.com'),
-//  Contact(name: 'Rhoda Hassinger', email: 'rhoda.hassinger@me.com'),
-//  Contact(name: 'Carson Cupps', email: 'carson.cupps@me.com'),
-//  Contact(name: 'Devora Nantz', email: 'devora.nantz@me.com'),
-//  Contact(name: 'Tyisha Primus', email: 'tyisha.primus@me.com'),
-];

@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:seclot/data_store/local_storage_helper.dart';
-import '../data_store/user_details.dart';
+import 'package:scoped_model/scoped_model.dart';
+import 'package:seclot/scopped_model/user_scopped_model.dart';
 import '../utils/color_conts.dart';
 import '../utils/image_utils.dart';
 import '../utils/margin_utils.dart';
@@ -16,7 +16,8 @@ class ViewProfile extends StatefulWidget {
 }
 
 class _ViewProfileState extends State<ViewProfile> {
-  var _image;
+//  final userModel = UserModel();
+
   String _email = "Not set";
   String _name = "Not set";
   String _pin = "*******";
@@ -35,18 +36,33 @@ class _ViewProfileState extends State<ViewProfile> {
   );
 
   @override
-  void initState() {
-    fetchData();
-
-    super.initState();
-  }
-
-  Future getImage() async {
-    var image = await ImagePicker.pickImage(source: ImageSource.camera);
-
-    setState(() {
-      _image = image;
-    });
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ScopedModel(
+        model: userModel,
+        child: Scaffold(
+          body: ScopedModelDescendant<UserModel>(
+              builder: (context, child, model) {
+            return SafeArea(
+              child: ListView(
+                children: <Widget>[
+                  imageView(),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                  ),
+                  email(model),
+                  pin(),
+//              phone(),
+                  referalId(model),
+                  address(model),
+                  editProfile(),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
   }
 
   Widget imageView() {
@@ -64,23 +80,48 @@ class _ViewProfileState extends State<ViewProfile> {
             ],
           ),
         ),
-        Padding(
+        Container(
           padding: const EdgeInsets.all(8.0),
           child: Center(
-            child: Container(
-              child: Image.asset(ImageUtils.person_avatar),
-              height: 100.0,
-              width: 100.0,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(color: Colors.black, width: 3.0)),
-            ),
+            child: userModel.getUserData().picture.isNotEmpty
+                ? Container(
+                    height: 100.0,
+                    width: 100.0,
+                    /*child: FadeInImage(
+                      placeholder: AssetImage(ImageUtils.person_avatar),
+                      image: CachedNetworkImageProvider(
+                          userModel.getUserData().picture),
+                    ),*/
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black, width: 1.0),
+                        image: DecorationImage(
+                            image:
+                                /*AdvancedNetworkImage(
+                                userModel.getUserData().picture,
+                                useDiskCache: true)*/
+                                CachedNetworkImageProvider(
+                                    userModel.getUserData().picture),
+                            fit: BoxFit.cover)),
+                  )
+                : Container(
+                    child: Image.asset(ImageUtils.person_avatar),
+                    height: 100.0,
+                    width: 100.0,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black, width: 3.0)),
+                  ),
           ),
         ),
         SizedBox(height: 16.0),
         Text(
-          _name,
+          "${userModel.getUserData().firstName} ${userModel.getUserData().lastName}"
+              .replaceAll(RegExp(r'[^\w\s]+'), ''),
+//          userModel.getUserData().firstName,
+//          _name,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 24.0),
         ),
@@ -89,7 +130,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget email() {
+  Widget email(UserModel model) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +165,8 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  _email,
+                  model.user.email,
+//                  _email,
                   style: TextStyle(
                       fontSize: _inputSize, color: ColorUtils.dark_gray),
                   softWrap: true,
@@ -173,7 +215,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  _pin,
+                  "*****",
                   style: TextStyle(
                       fontSize: _inputSize, color: ColorUtils.dark_gray),
                   softWrap: true,
@@ -236,7 +278,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget referalId() {
+  Widget referalId(UserModel model) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +304,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  'REFERAL ID',
+                  'SECLOT ID',
                   style: TextStyle(fontSize: _labelSize, color: Colors.grey),
                 ),
               ),
@@ -275,7 +317,7 @@ class _ViewProfileState extends State<ViewProfile> {
                       2.0,
                     ),
                     child: Text(
-                      _referal_id,
+                      model.user.seclotId.toString(),
                       style: TextStyle(
                           fontSize: _inputSize, color: ColorUtils.dark_gray),
                       softWrap: true,
@@ -306,7 +348,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget address() {
+  Widget address(UserModel model) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,7 +383,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  _address,
+                  "${model.user.latitude} ${model.user.longitude}",
                   style: TextStyle(
                       fontSize: _inputSize, color: ColorUtils.dark_gray),
                   softWrap: true,
@@ -373,52 +415,5 @@ class _ViewProfileState extends State<ViewProfile> {
                     style: TextStyle(fontSize: 18.0, color: Colors.white),
                   )))),
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: SafeArea(
-          child: ListView(
-            children: <Widget>[
-              imageView(),
-              Padding(
-                padding: EdgeInsets.all(16.0),
-              ),
-              email(),
-              pin(),
-//              phone(),
-              referalId(),
-              address(),
-              editProfile(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void fetchData() {
-//    LocalStorageHelper().getPhon()
-//        .then((phone){
-//      setState(() {
-//        _phone = phone;
-//      });
-//    });
-//
-//    var userInfo  = UserInfo.getInstance();
-//    var profile = userInfo.getProfile();
-
-    var profile = UserDetails().getUserData();
-
-    String s = "${profile.firstName} ${profile.lastName}";
-    setState(() {
-      _name = s.replaceAll(new RegExp(r'[^\w\s]+'), '');
-      _email = profile.email;
-      _pin = "*******";
-      _referal_id = profile.seclotId.toString();
-      _address = "${profile.latitude} ${profile.longitude}";
-    });
   }
 }

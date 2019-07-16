@@ -7,14 +7,16 @@ import 'package:seclot/model/phone_and_pin.dart';
 import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/auth/otp.dart';
+import 'package:seclot/views/widget/ui_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider{
   final _formKey = GlobalKey<FormState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool loading = false;
   bool errorOccured = false;
@@ -43,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (value.isNotEmpty) {
         var decode = json.decode(value);
 
-        print(decode);
+        // print(decode);
         setState(() {
           _phoneNumber = decode['phoneNumber'];
           _pin = decode['pin'];
@@ -68,10 +70,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     void _onSubmit(String value) {
-      print(value);
+      // print(value);
     }
 
     return new Scaffold(
+      key: _scaffoldKey,
         body: SafeArea(
             child: SingleChildScrollView(
       child: Form(
@@ -137,6 +140,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value.length != 5) {
                           return 'Invalid pin';
                         }
+
+                        return null;
                       },
                       onSaved: (String val) {
                         _pin = val;
@@ -168,14 +173,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     SizedBox(height: 8.0),
-                    _getErrorText(),
-                    _login(),
+//                    _getErrorText(),
+                  MaterialButton(
+                    onPressed: login,
+                    elevation: 8.0,
+//                  splashColor: Colors.white,
+                    minWidth: double.infinity,
+                    height: 48.0,
+                    color: Colors.black,
+                    child: Text(
+                      'CONTINUE',
+                      style: TextStyle(fontSize: 16.0),
+                    ),
+                    textColor: Colors.white,
+                  ),
                     SizedBox(height: 16.0),
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          Text("Don't an account?"),
+                          Text("Don't have an account?"),
                           FlatButton(
                               onPressed: () {
                                 Navigator.pushNamed(context, RoutUtils.auth);
@@ -206,78 +223,33 @@ class _LoginScreenState extends State<LoginScreen> {
     )));
   }
 
-  Widget _login() {
-    return loading
-        ? Center(child: CircularProgressIndicator())
-        : MaterialButton(
-            onPressed: () {
-              if (_formKey.currentState.validate()) {
-                _formKey.currentState.save();
+  @override
+  GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
 
-                setState(() {
-                  loading = true;
-                });
+  void login() {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
 
-                APIService()
-                    .performLogin(_phoneNumber, _pin, _rememberMe)
-                    .then((value) {
-                  setState(() {
-                    errorOccured = !value.isEmpty;
-                  });
+      showLoadingSnackBar();
 
-                  if (!errorOccured) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                        RoutUtils.home, (Route<dynamic> route) => false);
-                  }
-                  setState(() {
-                    print("RESPONSE FROM LOGIN => $value");
-                    _errorMessage = value;
-                    loading = false;
-                  });
-                });
+//      setState(() {
+//        print("setting state");
+//        loading = true;
+//      });
 
-//          Future.delayed(Duration(seconds: 3), (){setState(() {
-//            errorOccured = true;
-//            loading = false;
-//          });});
+      APIService()
+          .performLogin(_phoneNumber, _pin, _rememberMe)
+          .then((value) {
 
-              }
-            },
-            elevation: 8.0,
-//                  splashColor: Colors.white,
-            minWidth: double.infinity,
-            height: 48.0,
-            color: Colors.black,
-            child: Text(
-              'CONTINUE',
-              style: TextStyle(fontSize: 16.0),
-            ),
-            textColor: Colors.white,
-          );
-  }
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            RoutUtils.home, (Route<dynamic> route) => false);
 
-  _getErrorText() {
-    if (errorOccured) {
-      var text = _errorMessage;
-      return Column(
-        children: <Widget>[
-          Center(
-            child: Text(
-              "$text",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-          SizedBox(
-            height: 24.0,
-          ),
-        ],
-      );
-    } else {
-      return Text(
-        "",
-        style: TextStyle(fontSize: 1.0),
-      );
+      }).catchError((error) {
+        // print("RESPONSE FROM LOGIN => $value");
+        showInSnackBar( "Error signing please check your network and try again");
+      });
+    }else{
+      showInSnackBar("Please enter a valid phonenumber and password");
     }
   }
 }
