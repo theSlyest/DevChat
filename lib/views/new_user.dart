@@ -433,6 +433,7 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
                     showInSnackBar("Account created");
                     appStateProvider.user = userData.user;
                     appStateProvider.token = userData.token;
+                    appStateProvider.password = _pin;
                     appStateProvider.saveDetails(userData);
 
                     Future.delayed(Duration(seconds: 2), () =>

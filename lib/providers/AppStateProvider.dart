@@ -10,6 +10,7 @@ class AppStateProvider extends ChangeNotifier{
   
   UserDTO get user => appState.user;
   String get token => appState.token;
+  String get password => appState.password;
   List<IceDTO> get personalIces => appState.personalIces;
   List<IceDTO> get corporateIces => appState.corporateIces;
 
@@ -24,6 +25,10 @@ class AppStateProvider extends ChangeNotifier{
 
   set token(String token){
     appState.token = token;
+    notifyListeners();
+  }
+  set password(String token){
+    appState.password = token;
     notifyListeners();
   }
 
@@ -51,12 +56,14 @@ class AppStateProvider extends ChangeNotifier{
 class AppState{
   UserDTO user;
   String token;
+  String password;
   List<IceDTO> personalIces;
   List<IceDTO> corporateIces;
 
   AppState(){
     user = null;
     token = "";
+    password = "";
     personalIces = [];
     corporateIces = [];
   }
@@ -65,4 +72,5 @@ class AppState{
 class UserAndToken{
   String token = "";
   UserDTO user;
+  String password;
 }

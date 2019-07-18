@@ -877,6 +877,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnack
                   var userAndToken = UserAndToken();
                   userAndToken.user = res;
                   userAndToken.token = appStateProvider.token;
+                  userAndToken.token = appStateProvider.password;
 
                   appStateProvider.saveDetails(userAndToken);
                   appStateProvider.user = res;

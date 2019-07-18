@@ -13,7 +13,7 @@ import 'package:seclot/views/retract_message.dart';
 import 'package:seclot/views/subscription.dart';
 import 'package:seclot/views/auth_screen.dart';
 import 'package:seclot/views/create_edit_profile.dart';
-import 'package:seclot/views/home.dart';
+import 'package:seclot/views/home/home.dart';
 import 'package:seclot/views/auth/login_screen.dart';
 import 'package:seclot/views/new_user.dart';
 import 'package:seclot/views/auth/otp.dart';

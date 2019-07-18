@@ -110,14 +110,12 @@ class APIService {
     var header = Map<String, String>();
     header["Content-Type"] = "application/json";
 
-    var body =  json.encode({
+    var body = json.encode({
       "authCode": authCode,
       "pin": pin,
     });
 
-    final response = await http.put(URL,
-        headers: header,
-        body: body);
+    final response = await http.put(URL, headers: header, body: body);
 
     print(body);
     print(response);
@@ -129,7 +127,6 @@ class APIService {
       print(response.statusCode);
 
       return true;
-
     } else {
       print(response.body);
       print(response.statusCode);
@@ -225,7 +222,7 @@ class APIService {
       print(response.statusCode);
 
       String message = resBody['message'];
-      if( message == null || message.isEmpty){
+      if (message == null || message.isEmpty) {
         message = "Login failed, please check your network and try again";
       }
 
@@ -256,21 +253,19 @@ class APIService {
 
       LocalStorageHelper().saveToken(resBody["token"]);
 
-
       UserAndToken loginInfo = UserAndToken();
       loginInfo.user = UserDTO.fromJson(resBody["profile"]);
       loginInfo.token = resBody["token"];
 
-
       return loginInfo;
-
     } else {
       // print("API REQUEST FAILED WOEFULLY");
       // print("${response.body}");
 
       String message = resBody["message"];
-      if(message == null || message.isEmpty){
-        message = "Error creating account, please check your network and try again";
+      if (message == null || message.isEmpty) {
+        message =
+            "Error creating account, please check your network and try again";
       }
 
       throw Exception(message);
@@ -323,7 +318,6 @@ class APIService {
 
     print("${response.body}");
     if (response.statusCode == 200) {
-
       UserDetails().updateUserData(json.decode(response.body));
 
       var user = UserDTO.fromJson(json.decode(response.body));
@@ -333,7 +327,9 @@ class APIService {
       var decode = json.decode(response.body);
 
       var message = "Error! please check your network and try again";
-      if(decode != null && decode["message"] != null && decode['message'].isNotEmpty){
+      if (decode != null &&
+          decode["message"] != null &&
+          decode['message'].isNotEmpty) {
         message = decode["message"];
       }
 
@@ -601,7 +597,7 @@ class APIService {
 
     final response = await http.post(SEND_DISTRESS_CALL, headers: header);
 
-    // print(response);
+    print(response);
 
     var encode = json.decode(response.body);
     print(encode);

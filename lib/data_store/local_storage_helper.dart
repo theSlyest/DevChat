@@ -121,6 +121,7 @@ class LocalStorageHelper {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     prefs.setString("access_token", userAndToken.token);
+    prefs.setString("password", userAndToken.password);
     prefs.setString("user_details", json.encode(userAndToken.user.toFullJson()));
 
     print("details saved");
@@ -130,6 +131,7 @@ class LocalStorageHelper {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     prefs.setString("access_token", "");
+    prefs.setString("password", "");
     prefs.setString("user_details", "");
 
     print("details cleared");
@@ -142,6 +144,7 @@ class LocalStorageHelper {
 
     var userString = prefs.getString("user_details") ?? "";
     var token  = prefs.getString("access_token") ?? "";
+    var password  = prefs.getString("password") ?? "";
 
     print(userString);
     print(token);
@@ -149,6 +152,7 @@ class LocalStorageHelper {
     var user = UserDTO.fromJson(json.decode(userString)) ?? null;
     userAndToken.user = user;
     userAndToken.token = token;
+    userAndToken.password = password;
 
    if(user == null || token == null || token.isEmpty){
      throw Exception("Data not found");

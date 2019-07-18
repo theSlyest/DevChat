@@ -214,6 +214,7 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
         if (_rememberMe) {
           appStateProvider.user = userData.user;
           appStateProvider.token = userData.token;
+          appStateProvider.password = _pin;
           appStateProvider.saveDetails(userData);
         }
 
