@@ -37,7 +37,7 @@ class UserDTO {
         nextBillDate = 0,
         plan = "";
 
-  UserDTO.fromJson(Map<String, dynamic> json) {
+  UserDTO.fromJsonOld(Map<String, dynamic> json) {
     token = json.containsKey("token") ? json['token'] : "";
     json = json["profile"];
 
@@ -72,9 +72,30 @@ class UserDTO {
     nextBillDate = json.containsKey("nextBillDate") ? json['nextBillDate'] : 0;
   }
 
+  UserDTO.fromJson(Map<String, dynamic> json) {
+    firstName = json['firstName'] ?? "";
+    lastName = json['lastName'] ?? "";
+    address = json['address'] ?? "";
+    seclotId = json['seclotId'] ?? 0;
+    registerDate = json['accountCreationDate'] ?? 0;
+    walletBalance =
+        json.containsKey("walletBalance") ? json['walletBalance'] : 0;
+    subscriptionStatus = json['subscriptionStatus'] ?? "Not set";
+    picture = json['picture'] ?? "";
+    email = json['email'] ?? "Not set";
+    latitude = json["lastKnownLocation"]['latitude'] ?? 0.0;
+    longitude = json["lastKnownLocation"]['longitude'] ?? 0.0;
+    phone = json['phoneNumber'] ?? "";
+    referralId = json['referralId'] ?? "";
+    plan = json['plan'] ?? "";
+    accountStatus = json['accountStatus'] ?? "";
+    accountCreationDate = json['accountCreationDate'] ?? 0;
+    nextBillDate = json['nextBillDate'] ?? 0;
+  }
+
   Map<String, dynamic> toJson() => {
-//        'firstName': firstName,
-//        'lastName': lastName,
+        'firstName': firstName,
+        'lastName': lastName,
 //        'address': address,
         'email': email,
         'location': {'latitude': latitude, 'longitude': longitude}
@@ -91,7 +112,7 @@ class UserDTO {
         'picture': picture,
         'email': email,
         'referralId': referralId,
-        'location': {'latitude': latitude, 'longitude': longitude},
+        'lastKnownLocation': {'latitude': latitude, 'longitude': longitude},
         'accountCreationDate': accountCreationDate,
         'plan': plan,
         'accountStatus': accountStatus,

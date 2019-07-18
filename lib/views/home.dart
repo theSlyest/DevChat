@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_image/network.dart';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/scopped_model/user_scopped_model.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
@@ -415,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.max,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      userModel.getUserData().picture.isNotEmpty
+                      appStateProvider.user.picture.isNotEmpty
                           ? Container(
                               height: 100.0,
                               width: 100.0,
@@ -435,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 userModel.getUserData().picture,
                                 useDiskCache: true)*/
                                           CachedNetworkImageProvider(
-                                              userModel.getUserData().picture),
+                                              appStateProvider.user.picture),
                                       fit: BoxFit.cover)),
                             )
                           : Container(
@@ -461,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
 //                          _name,
-                          "${model.user.firstName} ${model.user.lastName}",
+                          "${appStateProvider.user.firstName} ${appStateProvider.user.lastName}",
                           style: TextStyle(fontSize: 18.0, color: Colors.white),
                         ),
                       ),
@@ -604,6 +606,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     Navigator.pop(context);
                     LocalStorageHelper().saveLoginDetails("");
+                    appStateProvider.logout();
                     Navigator.of(context).pushNamedAndRemoveUntil(
                         RoutUtils.splash, (Route<dynamic> route) => false);
                   },
@@ -621,8 +624,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
+    appStateProvider = Provider.of<AppStateProvider>(context);
+
     return FutureBuilder<UserDetails>(
       future: getDetails(), // a previously-obtained Future<String> or null
       builder: (BuildContext context, AsyncSnapshot<UserDetails> snapshot) {

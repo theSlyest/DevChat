@@ -14,7 +14,7 @@ class UserDetails {
   void setUserData(Map<String, dynamic> json) {
 //    print("IN SET USER DATA => $json");
 
-    _user = UserDTO.fromJson(json);
+    _user = UserDTO.fromJsonOld(json);
 //    print("USER => $json");
 //    print("USER => ${_user.toFullJson()}");
   }

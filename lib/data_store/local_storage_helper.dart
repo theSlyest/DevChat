@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:seclot/model/phone_and_pin.dart';
+import 'package:seclot/model/user.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageHelper {
@@ -110,6 +115,48 @@ class LocalStorageHelper {
   Future<String> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return (prefs.getString(_token) ?? "");
+  }
+
+  Future<void> saveUserAndToken(UserAndToken userAndToken) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.setString("access_token", userAndToken.token);
+    prefs.setString("user_details", json.encode(userAndToken.user.toFullJson()));
+
+    print("details saved");
+  }
+
+  Future<void> clearUserAndToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.setString("access_token", "");
+    prefs.setString("user_details", "");
+
+    print("details cleared");
+  }
+
+  Future<UserAndToken> getUserAndToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    UserAndToken userAndToken = UserAndToken();
+
+    var userString = prefs.getString("user_details") ?? "";
+    var token  = prefs.getString("access_token") ?? "";
+
+    print(userString);
+    print(token);
+
+    var user = UserDTO.fromJson(json.decode(userString)) ?? null;
+    userAndToken.user = user;
+    userAndToken.token = token;
+
+   if(user == null || token == null || token.isEmpty){
+     throw Exception("Data not found");
+   }
+
+   print("retriving details");
+
+   return userAndToken;
   }
 
 //      SharedPreferences prefs = await SharedPreferences.getInstance();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,9 +8,11 @@ import 'package:flutter_places_dialog/flutter_places_dialog.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:location/location.dart';
+import 'package:provider/provider.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
+import 'package:seclot/views/widget/ui_snackbar.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
-import '../data_store/user_details.dart';
 import '../model/user.dart';
 import '../utils/color_conts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -26,9 +29,9 @@ class CreateProfileScreen extends StatefulWidget {
   _CreateProfileScreenState createState() => _CreateProfileScreenState();
 }
 
-class _CreateProfileScreenState extends State<CreateProfileScreen> {
-  var _loading = true;
-
+class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnackBarProvider {
+  final _formKey = GlobalKey<FormState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   double _width;
   File _image;
 
@@ -57,12 +60,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   final _sectorController = TextEditingController();
   var _addressController = TextEditingController();
 
-  final _formKey = GlobalKey<FormState>();
 
   var _icon_size = 24.0;
-  UserDTO user = null;
-
-  bool _saving_changes = false;
   var location = new Location();
 
   @override
@@ -78,45 +77,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     super.dispose();
   }
 
-  /* void _getLocation(){
-    var location = new Location();
-
-    try {
-      location.getLocation().then((loc) {
-        var currentLocation = loc;
-//
-//        latitude: loc["latitude"],
-//        longitude: loc["longitude"])
-
-        _addressController.text =
-        "${_place.location.latitude}, ${_place.location.longitude}";
-      });
-    } on PlatformException {
-
-    }
-  }*/
-
-  void _fetchData() {
-    this.user = UserDetails().getUserData();
-
-    // print(user.toFullJson());
-
-    String s = "${user.firstName} ${user.lastName}";
-    s = s.replaceAll("\t", '');
-    setState(() {
-      _nameController.text = s;
-      _referealIdController.text = "${user.referralId}";
-      _emailController.text = "${user.email}";
-
-      _addressController.text = "${user.latitude}, ${user.longitude}";
-
-      if (!(user.latitude == 0.0) && !(user.longitude == 0.0)) {
-        // print("LOCATION DATA => ${user.latitude}, ${user.longitude}");
-      }
-
-      _loading = false;
-    });
-  }
 
   @override
   void initState() {
@@ -125,7 +85,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 //        "AIzaSyAMttZPl6ZHtz56c3eLIFiy-5Z_wZYekPY"
 ////        "AIzaSyDwbZW8HVXFZvj_6LfEaSZwWfshqzkoU2w"
 //        );
-    _fetchData();
   }
 
   void _getPhone() {
@@ -221,9 +180,14 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     }
   }
 
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
+    appStateProvider = Provider.of<AppStateProvider>(context);
+
     return Scaffold(
+      key: _scaffoldKey,
       appBar: new AppBar(
         backgroundColor: Colors.black,
         title: Text(
@@ -236,33 +200,19 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Widget _getView() {
-    return _loading
-        ? Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Center(
-                child: CircularProgressIndicator(),
-              ),
-              FlatButton(
-                onPressed: (() {}),
-//              child: Text("Cancel", style: TextStyle(),)
-              )
-            ],
-          )
-        : Form(
+    return Form(
             key: _formKey,
             child: ListView(
               children: <Widget>[
                 imageView(),
-                name(),
+                firstName(),
+                lastName(),
                 email(),
                 pin(),
 //                phone(),
                 referealId(),
                 address(),
-                selectSector(),
+//                selectSector(),
                 Padding(
                   padding: EdgeInsets.all(16.0),
                   child: _saveChanges(),
@@ -280,7 +230,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             height: 300.0,
             color: Colors.black,
             child: _image == null
-                ? user.picture.isNotEmpty
+                ? appStateProvider.user.picture.isNotEmpty
                     ? Stack(children: <Widget>[
                         Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -290,7 +240,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                                 child: Stack(
                                   children: <Widget>[
                                     CachedNetworkImage(
-                                        imageUrl: user.picture,
+                                        imageUrl: appStateProvider.user.picture,
                                         fit: BoxFit.cover),
                                     Align(
                                         alignment: Alignment.center,
@@ -363,7 +313,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget name() {
+  Widget firstName() {
     return Padding(
       padding: spacing,
       child: Row(
@@ -383,10 +333,57 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               child: FocusScope(
             node: new FocusScopeNode(),
             child: TextFormField(
-              controller: _nameController,
+              initialValue: appStateProvider.user.firstName,
+              onSaved: (value){
+                _firstName = value;
+              },
               style: TextStyle(fontSize: 18.0, color: Colors.black54),
               decoration: InputDecoration(
-                labelText: 'NAME',
+                labelText: 'First Name',
+                labelStyle: TextStyle(
+                  fontSize: inputFontStyle,
+                ),
+                hintStyle: TextStyle(
+                  fontSize: inputLabel,
+                  height: 1.5,
+                ),
+              ),
+              autofocus: true,
+//          keyboardType: TextInputType.phone,
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget lastName() {
+    return Padding(
+      padding: spacing,
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.person,
+            size: _icon_size,
+            color: ColorUtils.dark_gray,
+          ),
+          SizedBox(
+            width: inputSeperator,
+          ),
+          Expanded(
+              child: FocusScope(
+            node: new FocusScopeNode(),
+            child: TextFormField(
+              initialValue: appStateProvider.user.lastName,
+              onSaved: (value){
+                _lastName = value;
+              },
+              style: TextStyle(fontSize: 18.0, color: Colors.black54),
+              decoration: InputDecoration(
+                labelText: 'Last Name',
                 labelStyle: TextStyle(
                   fontSize: inputFontStyle,
                 ),
@@ -405,6 +402,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Widget email() {
+    _emailController.text = appStateProvider.user.email;
+
     return Padding(
       padding: spacing,
       child: Row(
@@ -429,7 +428,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             },
             style: TextStyle(fontSize: 18.0, color: Colors.black54),
             decoration: InputDecoration(
-              labelText: 'EMAIL',
+              labelText: 'Email',
               labelStyle: TextStyle(
                 fontSize: inputFontStyle,
               ),
@@ -470,7 +469,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               obscureText: true,
               style: TextStyle(fontSize: 18.0, color: Colors.black54),
               decoration: InputDecoration(
-                labelText: 'PIN',
+                labelText: 'Pin',
                 labelStyle: TextStyle(
                   fontSize: inputFontStyle,
                 ),
@@ -530,6 +529,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Widget referealId() {
+
+    _referealIdController.text = appStateProvider.user.referralId;
     return Padding(
       padding: spacing,
       child: Row(
@@ -568,6 +569,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Widget getReferalTextField() {
+
     return _referealIdController.text.isEmpty
         ? TextFormField(
             controller: _referealIdController,
@@ -614,6 +616,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Widget address() {
+    _addressController.text = "${appStateProvider.user.address}(Lat: ${appStateProvider.user.latitude}, Lon: ${appStateProvider.user.longitude})";
     return Padding(
       padding: spacing,
       child: Row(
@@ -747,12 +750,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       return null;
   }
 
-  // user defined function
-
-  void _showLocationPicker() {
-//    setState(() {_locationPickerData = result.toString();});
-  }
-
   void _showImagePickerDialog() {
     // flutter defined function
     showDialog(
@@ -822,6 +819,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       place = await FlutterPlacesDialog.getPlacesDialog();
+      _addressController.text = "(Lat: ${place.location.latitude}, Lon: ${place.location.longitude})";
     } on PlatformException {
       place = null;
     } catch (error) {
@@ -849,65 +847,54 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   getAddress(double latitude, double longitude) {}
 
   Widget _saveChanges() {
-    return _saving_changes
-        ? Center(child: CircularProgressIndicator())
-        : MaterialButton(
-            onPressed: () {
+    return MaterialButton(
+            onPressed: () async {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
 
-                setState(() {
-                  _saving_changes = true;
-                });
+                showLoadingSnackBar();
 
-                LocalStorageHelper().getToken().then((token) {
-                  user = UserDTO();
-                  user.email = _emailController.text;
+                var user = UserDTO();
+                user.firstName = _firstName;
+                user.lastName = _lastName;
+                user.email = _emailController.text;
 
-                  if (_place != null) {
-                    user.latitude = _place.location.latitude;
-                    user.longitude = _place.location.longitude;
+                if (_place != null) {
+                  user.latitude = _place.location.latitude;
+                  user.longitude = _place.location.longitude;
+                }
+
+                if (_referealIdController.text.isNotEmpty &&
+                    user.referralId.isEmpty) {
+                  user.referralId = _referealIdController.text;
+                }
+
+                try{
+                  var res = await APIService.getInstance().updateUser(appStateProvider.token, user);
+                  showInSnackBar("Changes saved");
+
+//                  appStateProvider.user = res;
+                  var userAndToken = UserAndToken();
+                  userAndToken.user = res;
+                  userAndToken.token = appStateProvider.token;
+
+                  appStateProvider.saveDetails(userAndToken);
+                  appStateProvider.user = res;
+
+
+                }catch(err){
+
+                  if(err == null || err.message == null || err.message.isEmpty) {
+                    showInSnackBar("Error, please check your network and try again");
+                  }else{
+                    showInSnackBar(err.message);
                   }
 
-                  if (_referealIdController.text.isNotEmpty &&
-                      user.referralId.isEmpty) {
-                    user.referralId = _referealIdController.text;
-                  }
-
-                  // print("UPDATE PROFILE PRESSED");
-
-                  APIService.getInstance().updateUser(token, user).then((bool) {
-                    if (bool) {
-                      // print("SUCCESS");
-
-                      _fetchData();
-                      showToast("Changes saved");
-                    } else {
-                      // print("FAILURE");
-                      showToast(
-                          "Error occured while saving changes, please check your network and try again");
-                    }
-
-                    setState(() {
-                      _saving_changes = false;
-                    });
-                  });
-                });
-
-//          Future.delayed(Duration(seconds: 3), () {
-//            setState(() {
-//              _saving_changes = false;
-//            });
-//          });
-
-//                      Navigator.of(context)
-//                          .pushNamedAndRemoveUntil(RoutUtils.home,
-//                              (Route<dynamic> route) => false);
+                }
 
               } else {
-                setState(() {
-                  _saving_changes = false;
-                });
+                showInSnackBar("Please ensure filled all fields properly");
+
               }
             },
             elevation: 8.0,
@@ -943,6 +930,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 //        textcolor: '#ffffff'
     );
   }
+
+  @override
+  GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
 }
 
 /**

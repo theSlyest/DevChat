@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:scoped_model/scoped_model.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/scopped_model/user_scopped_model.dart';
 import '../utils/color_conts.dart';
 import '../utils/image_utils.dart';
@@ -35,31 +37,27 @@ class _ViewProfileState extends State<ViewProfile> {
     height: 1.0,
   );
 
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: ScopedModel(
-        model: userModel,
-        child: Scaffold(
-          body: ScopedModelDescendant<UserModel>(
-              builder: (context, child, model) {
-            return SafeArea(
-              child: ListView(
-                children: <Widget>[
-                  imageView(),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                  ),
-                  email(model),
-                  pin(),
+    appStateProvider = Provider.of<AppStateProvider>(context);
+
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          children: <Widget>[
+            imageView(),
+            Padding(
+              padding: EdgeInsets.all(16.0),
+            ),
+            email(),
+            pin(),
 //              phone(),
-                  referalId(model),
-                  address(model),
-                  editProfile(),
-                ],
-              ),
-            );
-          }),
+            referalId(),
+            address(),
+            editProfile(),
+          ],
         ),
       ),
     );
@@ -130,7 +128,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget email(UserModel model) {
+  Widget email() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +163,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  model.user.email,
+                  appStateProvider.user.email,
 //                  _email,
                   style: TextStyle(
                       fontSize: _inputSize, color: ColorUtils.dark_gray),
@@ -278,7 +276,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget referalId(UserModel model) {
+  Widget referalId() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +315,7 @@ class _ViewProfileState extends State<ViewProfile> {
                       2.0,
                     ),
                     child: Text(
-                      model.user.seclotId.toString(),
+                      appStateProvider.user.seclotId.toString(),
                       style: TextStyle(
                           fontSize: _inputSize, color: ColorUtils.dark_gray),
                       softWrap: true,
@@ -348,7 +346,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget address(UserModel model) {
+  Widget address() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +381,7 @@ class _ViewProfileState extends State<ViewProfile> {
                   2.0,
                 ),
                 child: Text(
-                  "${model.user.latitude} ${model.user.longitude}",
+                  "${appStateProvider.user.latitude} ${appStateProvider.user.longitude}",
                   style: TextStyle(
                       fontSize: _inputSize, color: ColorUtils.dark_gray),
                   softWrap: true,

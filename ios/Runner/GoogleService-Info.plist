@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>524034043560-29lkv8l2gi76345dkgh2b40bnbfriof6.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.524034043560-29lkv8l2gi76345dkgh2b40bnbfriof6</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>524034043560-bns49aq6n8jk12iupakvpvcgh1o05ej6.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDcaaCV_X_wNWrlH8FbTKILq7ujph_wUN0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>524034043560</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.seclotMobile.app</string>
+	<key>PROJECT_ID</key>
+	<string>seclot-66af5</string>
+	<key>STORAGE_BUCKET</key>
+	<string>seclot-66af5.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:524034043560:ios:fd67c21bafb8e81b</string>
+	<key>DATABASE_URL</key>
+	<string>https://seclot-66af5.firebaseio.com</string>
+</dict>
+</plist>

@@ -17,7 +17,7 @@ class UserModel extends Model {
   void setUserData(Map<String, dynamic> json) {
     print("IN SET USERMODEL DATA => $json");
 
-    _user = UserDTO.fromJson(json);
+    _user = UserDTO.fromJsonOld(json);
     notifyListeners();
     print("USER => $json");
     print("USER => ${_user.toFullJson()}");

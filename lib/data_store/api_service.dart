@@ -7,6 +7,9 @@ import 'package:async/async.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
+import 'package:seclot/views/auth/login_screen.dart';
+import 'package:seclot/views/auth/otp.dart';
 import '../data_store/local_storage_helper.dart';
 import 'package:seclot/model/ice.dart';
 import 'package:seclot/model/user.dart';
@@ -69,30 +72,69 @@ class APIService {
     }
   }
 
-  Future<int> verifyOTP(String phoneNumber, String OTP) async {
-    final LOGIN_URL =
-        "$_BASE_URL/user/verify-otp?phoneNumber=$phoneNumber&otp=$OTP";
-    final response = await http.get(LOGIN_URL);
+  Future<OTPResponse> verifyOTP(String phoneNumber, String OTP) async {
+    final URL = "$_BASE_URL/user/verify-otp?phoneNumber=$phoneNumber&otp=$OTP";
+    final response = await http.get(URL);
 
     // print(LOGIN_URL);
 
-    if (response.statusCode == 200) {
-      // print("API REQUEST WAS SUCCESSFUL");
-      // print("${response.body}");
+    print(response.body);
+    print(response.statusCode);
 
-      var jsonData = json.decode(response.body);
+    var jsonData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      print("API REQUEST WAS SUCCESSFUL");
+      print("${response.body}");
 
       LocalStorageHelper().setAuthCode(jsonData["authCode"]);
 
-      if (jsonData["newUser"] == true) return 1;
+      OTPResponse res = OTPResponse();
+      res.newUser = response.body.contains("newUser");
+      res.authCode = jsonData["authCode"];
 
-      return 0;
+      return res;
     } else {
-      // print("API REQUEST FAILED WOEFULLY");
-      // print("${response.statusCode}");
-      // print("${response.body}");
+      var message =
+          "Error verifying otp, please check your internet and try again";
+      if (jsonData["message"] != null && jsonData["message"].isNotEmpty) {
+        message = jsonData["message"];
+      }
+      throw Exception(message);
+    }
+  }
 
-      return -1;
+  Future<bool> setPin({String authCode, String pin}) async {
+    final URL = "$_BASE_URL/user/set-pin";
+
+    var header = Map<String, String>();
+    header["Content-Type"] = "application/json";
+
+    var body =  json.encode({
+      "authCode": authCode,
+      "pin": pin,
+    });
+
+    final response = await http.put(URL,
+        headers: header,
+        body: body);
+
+    print(body);
+    print(response);
+
+    if (response.statusCode == 200) {
+//      return true;
+
+      print(response.body);
+      print(response.statusCode);
+
+      return true;
+
+    } else {
+      print(response.body);
+      print(response.statusCode);
+
+      throw Exception("Error, please check your network and try again");
     }
   }
 
@@ -131,7 +173,8 @@ class APIService {
     return response;
   }*/
 
-  Future<String> performLogin(String phone, String pin, bool rememberMe) async {
+  Future<UserAndToken> performLogin(
+      String phone, String pin, bool rememberMe) async {
     final URL = "$_BASE_URL/user/login";
 
     print("performing login");
@@ -142,14 +185,15 @@ class APIService {
 
     var response = await http.post(URL, body: body);
 
+    var resBody = json.decode(response.body);
     if (response.statusCode == 200) {
-//      // print(response.body);
-
-      var resBody = json.decode(response.body);
+      var token = resBody["token"];
+      UserDTO user = UserDTO.fromJson(resBody["profile"]);
+//      print(resBody);
 
       var userDetails = UserDetails();
       userDetails.setUserData(resBody);
-      userDetails.getUserData().token = resBody["token"];
+      userDetails.getUserData().token = token;
 
 //      UserData.getInstance().token = resBody["token"];
 
@@ -171,16 +215,25 @@ class APIService {
         LocalStorageHelper().savePhoneAndPin("");
       }
 
-      return "";
+      UserAndToken loginInfo = UserAndToken();
+      loginInfo.user = user;
+      loginInfo.token = token;
+
+      return loginInfo; //resBody["token"];
     } else {
       print(response.body);
       print(response.statusCode);
 
-      throw Exception("Login failed, please check your network and try again");
+      String message = resBody['message'];
+      if( message == null || message.isEmpty){
+        message = "Login failed, please check your network and try again";
+      }
+
+      throw Exception(message);
     }
   }
 
-  Future<http.Response> newUser(Map<String, dynamic> body) async {
+  Future<UserAndToken> newUser(Map<String, dynamic> body) async {
     final CREATE_ACCOUNT_URL = "$_BASE_URL/user/register";
 
     var header = Map<String, String>();
@@ -189,36 +242,39 @@ class APIService {
     final response = await http.post(CREATE_ACCOUNT_URL,
         body: json.encode(body), headers: header);
 
+    var resBody = json.decode(response.body);
+    print(response.body);
+    print(response.statusCode);
     if (response.statusCode == 200) {
 //      // print(response.body);
 
       // print("API REQUEST WAS SUCCESSFUL");
-      var resBody = json.decode(response.body);
 
       var userDetails = UserDetails();
       userDetails.setUserData(resBody);
       userDetails.getUserData().token = resBody["token"];
 
       LocalStorageHelper().saveToken(resBody["token"]);
+
+
+      UserAndToken loginInfo = UserAndToken();
+      loginInfo.user = UserDTO.fromJson(resBody["profile"]);
+      loginInfo.token = resBody["token"];
+
+
+      return loginInfo;
+
     } else {
       // print("API REQUEST FAILED WOEFULLY");
       // print("${response.body}");
+
+      String message = resBody["message"];
+      if(message == null || message.isEmpty){
+        message = "Error creating account, please check your network and try again";
+      }
+
+      throw Exception(message);
     }
-
-    return response;
-
-//    if (response.statusCode == 200) {
-//      // print("API REQUEST WAS SUCCESSFUL");
-//      // print("${response.body}");
-//
-//      LocalStorageHelper().saveAccountDetails(response.body);
-//      return true;
-//    } else {
-//      // print("API REQUEST FAILED WOEFULLY");
-//      // print("${response.body}");
-//
-//      return false;
-//    }
 
 //    return response;
   }
@@ -252,7 +308,7 @@ class APIService {
 //    return response;
   }
 
-  Future<bool> updateUser(String token, UserDTO user) async {
+  Future<UserDTO> updateUser(String token, UserDTO user) async {
     // print("INSIDE UPDATE PROFILE");
     // print("USER DETAILS ${user.toJson()}");
 
@@ -265,23 +321,23 @@ class APIService {
     final response = await http.put(UPDATE_PROFILE_URL,
         headers: header, body: json.encode(user.toJson()));
 
-    // print("SENDING REQUEST NOW IN UPDATE PROFILE");
-
+    print("${response.body}");
     if (response.statusCode == 200) {
-      // print("API REQUEST WAS SUCCESSFUL");
-      // print("${response.body}");
 
       UserDetails().updateUserData(json.decode(response.body));
 
-//      LocalStorageHelper().saveAccountDetails(response.body);
+      var user = UserDTO.fromJson(json.decode(response.body));
 
-      return true;
+      return user;
     } else {
-      // print("API REQUEST FAILED WOEFULLY");
-      // print("${response.statusCode}");
-      // print("${response.body}");
+      var decode = json.decode(response.body);
 
-      return false;
+      var message = "Error! please check your network and try again";
+      if(decode != null && decode["message"] != null && decode['message'].isNotEmpty){
+        message = decode["message"];
+      }
+
+      throw Exception(message);
     }
 
 //    return response;

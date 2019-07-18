@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_places_dialog/flutter_places_dialog.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
+import 'package:seclot/views/widget/ui_snackbar.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
 import '../utils/color_conts.dart';
@@ -16,13 +20,16 @@ import '../utils/routes_utils.dart';
 import '../views/create_edit_profile.dart';
 
 class NewUserScreen extends StatefulWidget {
-//  const OTPScreen({this.phoneNumber});
+  NewUserScreen({@required this.authCode});
+  String authCode;
+
   @override
   _NewUserScreenState createState() => _NewUserScreenState();
 }
 
-class _NewUserScreenState extends State<NewUserScreen> {
+class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
   final _formKey = GlobalKey<FormState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   var _firstNameController = TextEditingController();
   var _lastNameController = TextEditingController();
@@ -334,56 +341,56 @@ class _NewUserScreenState extends State<NewUserScreen> {
     );
   }
 
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-//      theme: ThemeData(primaryColor: Colors.black, primaryColorDark: Colors.black, accentColor: Colors.black),
-
-      home: Scaffold(
-        appBar: new AppBar(
-          backgroundColor: Colors.black,
-          title: Text("ACCOUNT SETUP"),
-        ),
-        body: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    "Enter your details below to get started",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18.0),
-                  ),
-                  SizedBox(
-                    height: 30.0,
-                  ),
-                  first_name(),
-                  SizedBox(
-                    height: 10.0,
-                  ),
-                  last_name(),
-                  SizedBox(
-                    height: 10.0,
-                  ),
-                  email(),
-                  SizedBox(
-                    height: 10.0,
-                  ),
-                  address(),
-                  SizedBox(
-                    height: 10.0,
-                  ),
-                  pin(),
-                  reenter_pin(),
-                  SizedBox(
-                    height: 20.0,
-                  ),
-                  _getErrorText(),
-                  _login(context)
-                ],
-              ),
+    appStateProvider = Provider.of<AppStateProvider>(context);
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: new AppBar(
+        backgroundColor: Colors.black,
+        title: Text("ACCOUNT SETUP"),
+      ),
+      body: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: <Widget>[
+                Text(
+                  "Enter your details below to get started",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18.0),
+                ),
+                SizedBox(
+                  height: 30.0,
+                ),
+                first_name(),
+                SizedBox(
+                  height: 10.0,
+                ),
+                last_name(),
+                SizedBox(
+                  height: 10.0,
+                ),
+                email(),
+                SizedBox(
+                  height: 10.0,
+                ),
+                address(),
+                SizedBox(
+                  height: 10.0,
+                ),
+                pin(),
+                reenter_pin(),
+                SizedBox(
+                  height: 20.0,
+                ),
+                _getErrorText(),
+                _login(context)
+              ],
             ),
           ),
         ),
@@ -397,63 +404,52 @@ class _NewUserScreenState extends State<NewUserScreen> {
         : Padding(
             padding: const EdgeInsets.all(8.0),
             child: MaterialButton(
-              onPressed: () {
+              onPressed: () async {
                 if (_formKey.currentState.validate()) {
                   _formKey.currentState.save();
 
-                  LocalStorageHelper().getAuthCode().then((auth) {
-                    if (auth.isEmpty) {
-                      //error signing
-                      //navigate to login
+                  showLoadingSnackBar();
 
-                      showErrorToast();
+                  var body = Map<String, dynamic>();
+                  body["authCode"] = widget.authCode;
+
+                  body["firstName"] = _firstName;
+                  body["lastName"] = _lastName;
+                  body["email"] = _lastName;
+                  body["pin"] = _pin;
+
+                  if (_place != null) {
+                    body["location"] = getLocation();
+                  } else {
+                    showInSnackBar(
+                        "Error getting location, please make sure your location is tured on, and select your address from the map");
+
+                    return;
+                  }
+
+                  try {
+                    var userData = await APIService().newUser(body);
+
+                    showInSnackBar("Account created");
+                    appStateProvider.user = userData.user;
+                    appStateProvider.token = userData.token;
+                    appStateProvider.saveDetails(userData);
+
+                    Future.delayed(Duration(seconds: 2), () =>
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                            RoutUtils.home, (Route<dynamic> route) => false));
+
+                  } catch (err) {
+                    print(err);
+                    if (err == null ||
+                        err.message == null ||
+                        err.message.isEmpty) {
+                      showInSnackBar(
+                          "Signup failed, please check your internet and try again");
                     } else {
-                      var body = Map<String, dynamic>();
-                      body["authCode"] = auth;
-
-                      body["firstName"] = _firstName;
-                      body["lastName"] = _lastName;
-                      body["email"] = _lastName;
-                      body["pin"] = _pin;
-
-                      if (_place != null) {
-                        body["location"] = getLocation();
-                      } else {
-                        _errorText =
-                            "Error getting location, please make sure your location is tured on, and select your address from the map";
-
-                        setState(() {
-                          errorOccured = true;
-                        });
-
-                        return;
-                      }
-
-                      print("BREAK");
-                      print(body);
-
-                      setState(() {
-                        errorOccured = false;
-                        loading = true;
-                      });
-
-                      APIService().newUser(body).then((response) {
-                        if (response.statusCode == 200) {
-                          errorOccured = false;
-
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                              RoutUtils.home, (Route<dynamic> route) => false);
-                        } else {
-                          _errorText = response.body;
-                          errorOccured = true;
-                        }
-
-                        setState(() {
-                          loading = false;
-                        });
-                      });
+                      showInSnackBar(err.message);
                     }
-                  });
+                  }
                 }
               },
 
@@ -572,4 +568,7 @@ class _NewUserScreenState extends State<NewUserScreen> {
 //      ),
 //    );
   }
+
+  @override
+  GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
 }

@@ -8,6 +8,9 @@ import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/new_user.dart';
+import 'package:seclot/views/widget/ui_snackbar.dart';
+
+import 'forgot_password.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
@@ -20,7 +23,9 @@ class OTPScreen extends StatefulWidget {
 }
 
 class _OTPScreenState extends State<OTPScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, UISnackBarProvider {
+  var _scaffoldKey = GlobalKey<ScaffoldState>();
+
   bool loading = false;
   bool otpLoading = false;
   bool errorOccured = false;
@@ -102,7 +107,7 @@ class _OTPScreenState extends State<OTPScreen>
     _controller2.dispose();
     _controller3.dispose();
     _controller4.dispose();
-    _timer.cancel();
+    _timer?.cancel();
 
     super.dispose();
   }
@@ -245,6 +250,7 @@ class _OTPScreenState extends State<OTPScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldKey,
         backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -261,58 +267,57 @@ class _OTPScreenState extends State<OTPScreen>
         ),
         body: Builder(
           builder: (context) => SingleChildScrollView(
-                child: Form(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Container(
-                      margin: EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text('Verification',
-                              style: TextStyle(fontSize: 32.0)),
-                          SizedBox(
-                            height: 8.0,
-                          ),
-                          Text(
-                              'Enter the 4-digit code sent to ******${widget.phoneNumber.substring(7, widget.phoneNumber.length)}',
-                              style: TextStyle(fontSize: 18.0)),
-                          SizedBox(
-                            height: 200.0,
-                            child: Container(
-                              child: Center(
-                                child: Image.asset(
-                                  ImageUtils.otp,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 70.0,
-                            child: textFields(),
-                          ),
-                          Container(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: _resendOTP(context),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 8.0,
-                          ),
-                          Container(
-                              margin: EdgeInsets.only(bottom: 24.0),
-                              child: SizedBox(
-                                  width: double.maxFinite,
-                                  height: MarginUtils.buttonHeight,
-                                  child: _verify(context))),
-                          _getErrorText(),
-                        ],
+            child: Form(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Container(
+                  margin: EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Verification', style: TextStyle(fontSize: 32.0)),
+                      SizedBox(
+                        height: 8.0,
                       ),
-                    ),
+                      Text(
+                          'Enter the 4-digit code sent to ******${widget.phoneNumber.substring(7, widget.phoneNumber.length)}',
+                          style: TextStyle(fontSize: 18.0)),
+                      SizedBox(
+                        height: 200.0,
+                        child: Container(
+                          child: Center(
+                            child: Image.asset(
+                              ImageUtils.otp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 70.0,
+                        child: textFields(),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(
+                          child: _resendOTP(context),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 8.0,
+                      ),
+                      Container(
+                          margin: EdgeInsets.only(bottom: 24.0),
+                          child: SizedBox(
+                              width: double.maxFinite,
+                              height: MarginUtils.buttonHeight,
+                              child: _verify(context))),
+                      _getErrorText(),
+                    ],
                   ),
                 ),
               ),
+            ),
+          ),
         ));
   }
 
@@ -320,40 +325,50 @@ class _OTPScreenState extends State<OTPScreen>
     return loading
         ? Center(child: CircularProgressIndicator())
         : MaterialButton(
-            onPressed: () {
+            onPressed: () async {
               if (validInput(context)) {
-                setState(() {
-                  loading = true;
-                });
+                showLoadingSnackBar();
 
                 String otp =
                     "${_controller1.text}${_controller2.text}${_controller3.text}${_controller4.text}";
-                APIService().verifyOTP(widget.phoneNumber, otp).then((x) {
-                  if (x != -1) {
-                    errorOccured = false;
 
-                    if (x == 1) {
-                      //new user, navigate to create new user profile
-                      LocalStorageHelper().getAuthCode().then((auth) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => NewUserScreen()));
-                      });
-                    } else {
-                      //old user, continue to home
-                      Navigator.of(context).pushNamed(RoutUtils.new_user);
-                    }
+                try {
+                  var response =
+                      await APIService().verifyOTP(widget.phoneNumber, otp);
+
+                  showInSnackBar("verified");
+
+                  if (response.newUser) {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => NewUserScreen(authCode: response.authCode,)));
                   } else {
-                    errorOccured = true;
-                  }
+                    //navigate to change pin page
+                    print("authCode = ${response.authCode}");
 
-                  setState(() {
-                    loading = false;
-                  });
-                });
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ForgotPasswordScreen(
+                                authCode: response.authCode)));
+                  }
+                } catch (e) {
+                  print(e);
+
+                  showInSnackBar(
+                      "Error verifying code, please check your network and try again");
+                  return;
+
+                  if (e.message != null && e.message.isNotEmpty) {
+                    showInSnackBar("${e.message}");
+                  } else {
+                    showInSnackBar(
+                        "Error verifying code, please check your network and try again");
+                  }
+                }
               } else {
-                _showErrorToast(context);
+                showInSnackBar('The code you entered is incomplete');
               }
             },
             elevation: 8.0,
@@ -479,4 +494,12 @@ class _OTPScreenState extends State<OTPScreen>
             ),
           );
   }
+
+  @override
+  GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
+}
+
+class OTPResponse {
+  String authCode;
+  bool newUser = false;
 }
