@@ -158,19 +158,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${appStateProvider.unreadMessageCount}',
                     style: TextStyle(fontSize: 16),
                   ),*/
-                  appStateProvider.unreadMessageCount > 0 ? Container(
+                  appStateProvider.unreadMessageCount > 0
+                      ? Container(
 //                    height: 40,
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black,
-                    ),
-                    child: Text(
-                      '${appStateProvider.unreadMessageCount}',
-                      style: TextStyle(fontSize: textSize, color: Colors.white),
-                    ),
-                  ) : SizedBox()
+                          alignment: Alignment.center,
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black,
+                          ),
+                          child: Text(
+                            '${appStateProvider.unreadMessageCount}',
+                            style: TextStyle(
+                                fontSize: textSize, color: Colors.white),
+                          ),
+                        )
+                      : SizedBox()
                 ],
               ),
               leading: Icon(
@@ -179,6 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: iconSize,
               ),
               onTap: () {
+                appStateProvider.clearUnread();
                 Navigator.pop(context);
                 Navigator.pushNamed(context, RoutUtils.notification);
               },
@@ -270,8 +274,39 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.white,
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.black),
-          backgroundColor: Colors.transparent,
-          elevation: 0.0,
+          backgroundColor: Colors.white,
+//          elevation: 0.0,
+          actions: <Widget>[
+            GestureDetector(
+              onTap: () {
+                appStateProvider.clearUnread();
+                Navigator.pushNamed(context, RoutUtils.notification);
+              },
+              child: Container(
+                alignment: Alignment.center,
+                child: Stack(
+                  children: <Widget>[
+                    Icon(
+                      EvaIcons.bellOutline,
+                    ),
+                    Positioned(
+                      right: 0,
+                      child: appStateProvider.unreadMessageCount > 0
+                          ? Container(
+                              height: 10,
+                              width: 10,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black,
+                              ),
+                            )
+                          : SizedBox(),
+                    )
+                  ],
+                ),
+              ),
+            )
+          ],
         ),
         body: SafeArea(
             child: Padding(
@@ -395,7 +430,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onMessage: (Map<String, dynamic> message) async {
         print("onMessage: $message");
 //        _showItemDialog(message);
-        showNotification(message["notification"]["title"], message["notification"]["body"]);
+        showNotification(
+            message["notification"]["title"], message["notification"]["body"]);
       },
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
@@ -449,11 +485,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  setupLocalNotification(){
+  setupLocalNotification() {
     flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
 // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
     var initializationSettingsAndroid =
-    new AndroidInitializationSettings('app_icon');
+        new AndroidInitializationSettings('ic_stat_name');
     var initializationSettingsIOS = new IOSInitializationSettings(
         onDidReceiveLocalNotification: onDidReceiveLocalNotification);
     var initializationSettings = new InitializationSettings(

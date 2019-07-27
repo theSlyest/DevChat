@@ -51,7 +51,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               itemCount: notifications.length,
                               itemBuilder: (context, index) {
                                 return NotificationListItem(
-                                    notifications[index]);
+                                    notifications[index], (notif){
+                                      if(!notif.seen) {
+                                        appState.messageSeen(notif.id);
+                                      }
+                                      showDetails(context, notif);
+                                });
                               }),
                         );
                 }
@@ -64,6 +69,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 return Center(child: CircularProgressIndicator());
               }),
         ));
+
   }
 
   noNotification() {
@@ -91,17 +97,62 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
     );
   }
+
+
+  showDetails(BuildContext context, NotificationDTO notification) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title:  Text("${notification.subject}"),
+          content: Container(
+            width: double.maxFinite,
+            height: MediaQuery.of(context).size.height / 2,
+            child: Column(
+              children: <Widget>[
+                Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: <Widget>[
+                          Container(
+                            height: 1,
+                            color: Colors.grey.withOpacity(0.5),
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          Text("${notification.message}")
+                        ],
+                      ),
+                    )),
+                notification.longitude == -0.0 && notification.longitude == -0.0 ? SizedBox() : SizedBox(
+                  height: 48,
+                  width: double.maxFinite,
+                  child: RaisedButton(
+                    onPressed: () {
+                      MapUtils.openMap(notification.latitude, notification.longitude);
+                    },
+                    color: Colors.black,
+                    child: Text(
+                      "VIEW LOCATION",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ));
+  }
 }
 
 class NotificationListItem extends StatelessWidget {
-  NotificationListItem(this.notification);
+  NotificationListItem(this.notification, this.notificationClicked);
   final NotificationDTO notification;
+  final Function(NotificationDTO) notificationClicked;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        showDetails(context);
+        notificationClicked(notification);
       },
       child: Container(
         padding: EdgeInsets.only(right: 8.0, top: 8.0),
@@ -184,52 +235,6 @@ class NotificationListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  showDetails(context) {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              content: Container(
-                width: double.maxFinite,
-                height: MediaQuery.of(context).size.height / 2,
-                child: Column(
-                  children: <Widget>[
-                    Expanded(
-                        child: SingleChildScrollView(
-                      child: Column(
-                        children: <Widget>[
-                          Text(
-                            "${notification.subject}",
-                            style: Theme.of(context).textTheme.title,
-                          ),
-                          Container(
-                            height: 1,
-                            color: Colors.grey.withOpacity(0.5),
-                            margin: EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          Text("${notification.message}")
-                        ],
-                      ),
-                    )),
-                    notification.longitude == -0.0 && notification.longitude == -0.0 ? SizedBox() : SizedBox(
-                      height: 48,
-                      width: double.maxFinite,
-                      child: RaisedButton(
-                        onPressed: () {
-                          MapUtils.openMap(notification.latitude, notification.longitude);
-                        },
-                        color: Colors.black,
-                        child: Text(
-                          "VIEW LOCATION",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ));
   }
 }
 

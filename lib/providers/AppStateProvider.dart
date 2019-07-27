@@ -128,7 +128,7 @@ class AppStateProvider extends ChangeNotifier {
   void saveInfo() {
     print("saving info to ${appState.user.phone}");
     //saving info
-    ref.child("profile").update(user.toFullJson());
+//    ref.child("profile").update(user.toFullJson());
   }
 
   Query getNotifications() {
@@ -140,6 +140,13 @@ class AppStateProvider extends ChangeNotifier {
 
   void saveFCMToken(String fcmToken) {
     ref.update({"fcmToken": fcmToken});
+  }
+
+  void clearUnread() {
+    ref.update({"newNotifications": 0});
+  }
+  void messageSeen(String messageId) {
+    ref.child("notifications").child(messageId).update({"seen": true});
   }
 
 //  void cancelSubscriptions();
