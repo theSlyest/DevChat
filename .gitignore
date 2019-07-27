@@ -19,6 +19,9 @@
 # Visual Studio Code related
 .vscode/
 
+# Cloud functions
+.cloud_functions/functions/node_modules/
+
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/

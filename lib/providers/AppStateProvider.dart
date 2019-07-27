@@ -12,6 +12,7 @@ class AppStateProvider extends ChangeNotifier {
   DatabaseReference ref;
   FirebaseDatabase database = FirebaseDatabase.instance;
   AppState appState;
+  int unreadMessageCount = 0;
 
   UserDTO get user => appState.user;
   String get token => appState.token;
@@ -19,6 +20,7 @@ class AppStateProvider extends ChangeNotifier {
   double get latitude => appState.latitude;
   double get longitude => appState.longitude;
   IceDAO get ice => appState.iceDAO;
+  get unreadMessage => unreadMessageCount;
 
   AppStateProvider() {
     appState = AppState();
@@ -98,8 +100,10 @@ class AppStateProvider extends ChangeNotifier {
     });
 
     ref.child("newNotifications").onValue.listen((event) {
-      print("new notification");
-      print("NEW NOTIFICATIONS => ${event.snapshot.value}");
+//      print("new notification");
+//      print("NEW NOTIFICATIONS => ${event.snapshot.value}");
+      unreadMessageCount = event.snapshot.value;
+      notifyListeners();
     });
   }
 
@@ -125,6 +129,17 @@ class AppStateProvider extends ChangeNotifier {
     print("saving info to ${appState.user.phone}");
     //saving info
     ref.child("profile").update(user.toFullJson());
+  }
+
+  Query getNotifications() {
+    return ref
+        .child("notifications")
+        .orderByChild('time') //order by creation time.
+        .limitToFirst(100); //limited to get only 10 documents.
+  }
+
+  void saveFCMToken(String fcmToken) {
+    ref.update({"fcmToken": fcmToken});
   }
 
 //  void cancelSubscriptions();
