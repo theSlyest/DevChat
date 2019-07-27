@@ -25,3 +25,30 @@ class IceDTO {
         'dateAdded': dateAdded,
       };
 }
+
+
+class IceDAO {
+  var personalIce = List<IceDTO>();
+  var cooperateIce = List<IceDTO>();
+
+  IceDAO();
+  static IceDAO deserializeIceFromResponse(Map<String, dynamic> resBody){
+    print(resBody);
+
+    print("Transforming ice...");
+    var iceDao = IceDAO();
+
+    List<dynamic> personalIceJsonList = resBody['userICEs'];
+    List<dynamic> cooperateIceJsonList = resBody['organizationICEs'];
+
+    for (Map<String, dynamic> ice in personalIceJsonList) {
+      iceDao.personalIce.add(IceDTO.fromJson(ice));
+    }
+
+    for (Map<String, dynamic> ice in cooperateIceJsonList) {
+      iceDao.cooperateIce.add(IceDTO.fromJson(ice));
+    }
+
+    return iceDao;
+  }
+}

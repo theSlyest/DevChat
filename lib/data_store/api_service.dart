@@ -244,8 +244,6 @@ class APIService {
     final response = await http.post(CREATE_ACCOUNT_URL,
         body: json.encode(body), headers: header);
 
-
-
     print("Data fetched");
     print("headers => ${response.headers}");
     print("body => ${response.body}");
@@ -255,7 +253,7 @@ class APIService {
 
     var resBody = json.decode(response.body);
     if (response.statusCode == 200) {
-       print("RESPONSE IS 200");
+      print("RESPONSE IS 200");
 
       // print("API REQUEST WAS SUCCESSFUL");
 
@@ -528,7 +526,7 @@ class APIService {
   //
   //====================================================================================================================//
 
-  Future<http.Response> saveIce(String name, String phone, String token) async {
+  Future<IceDAO> saveIce(String name, String phone, String token) async {
     // print("INSIDE SAVE TOKEN");
 
     final SAVE_IC = "$_BASE_URL/user/ice";
@@ -544,13 +542,17 @@ class APIService {
     final response =
         await http.post(SAVE_IC, headers: header, body: json.encode(body));
 
-    // print("SENDING REQUEST NOW IN SAVE IC");
-
-//    var encode = json.decode(response.body);
-    return response;
+    var decode = json.decode(response.body);
+    if (response.statusCode == 200) {
+      try {
+        return IceDAO.deserializeIceFromResponse(decode);
+      } catch (e) {}
+    } else {
+      throw Exception("error occured, check your network");
+    }
   }
 
-  Future<http.Response> getIce(String token) async {
+  Future<IceDAO> fetchIce(String token) async {
     final UPDATE_ICE = "$_BASE_URL/user/ice";
 
     var header = Map<String, String>();
@@ -564,12 +566,51 @@ class APIService {
       headers: header,
     );
 
+    Map<String, dynamic> resBody = json.decode(response.body);
+    if (response.statusCode == 200) {
+      print(resBody);
+
+      print("Transforming ice...");
+      try {
+        final iceDAO = IceDAO.deserializeIceFromResponse(resBody);
+
+        return iceDAO;
+      } catch (e) {
+        throw Exception("error occured, check your network");
+      }
+    } else {
+      throw Exception("Error occured, please check your network and try again");
+    }
+
 //    var encode = json.decode(response.body);
-    return response;
   }
 
-  Future<http.Response> updateIce(
-      {String iceId, bool pause, String token}) async {
+  Future<IceDAO> getIce(String token) async {
+    final UPDATE_ICE = "$_BASE_URL/user/ice";
+
+    var header = Map<String, String>();
+    header["Token"] = token;
+
+    // print("HEADER ==> $header");
+
+    print("Getting ice...");
+    final response = await http.get(
+      UPDATE_ICE,
+      headers: header,
+    );
+    var decode = json.decode(response.body);
+    if (response.statusCode == 200) {
+      try {
+        return IceDAO.deserializeIceFromResponse(decode);
+      } catch (e) {
+        throw Exception("error occured, check your network");
+      }
+    } else {
+      throw Exception("error occured, check your network");
+    }
+  }
+
+  Future<IceDAO> updateIce({String iceId, bool pause, String token}) async {
     // print("UPDATING ICE");
 
     final UPDATE_ICE = "$_BASE_URL/user/ice/$iceId";
@@ -584,19 +625,35 @@ class APIService {
     final response =
         await http.put(UPDATE_ICE, headers: header, body: json.encode(body));
 
-    return response;
+    var decode = json.decode(response.body);
+    if (response.statusCode == 200) {
+      try {
+        return IceDAO.deserializeIceFromResponse(decode);
+      } catch (e) {
+        throw Exception("error occured, check your network");
+      }
+    } else {
+      throw Exception("error occured, check your network");
+    }
   }
 
-  Future<dynamic> deleteIce(String iceId, String token) async {
+  Future<IceDAO> deleteIce(String iceId, String token) async {
     final DELETE_ICE = "$_BASE_URL/user/ice/$iceId";
 
     var header = Map<String, String>();
     header["Token"] = token;
 
     final response = await http.delete(DELETE_ICE, headers: header);
-
-//    var encode = json.decode(response.body);
-    return response;
+    var decode = json.decode(response.body);
+    if (response.statusCode == 200) {
+      try {
+        return IceDAO.deserializeIceFromResponse(decode);
+      } catch (e) {
+        throw Exception("error occured, check your network");
+      }
+    } else {
+      throw Exception("error occured, check your network");
+    }
   }
 
   //====================================================================================================================///
@@ -608,29 +665,21 @@ class APIService {
   Future<http.Response> sendDistressCall(String token) async {
     final SEND_DISTRESS_CALL = "$_BASE_URL/user/distress-call";
 
+    print("sending call");
+
     var header = Map<String, String>();
     header["Token"] = token;
 
     final response = await http.post(SEND_DISTRESS_CALL, headers: header);
 
-    print(response);
+    print(response.body);
+    print(response.statusCode);
+
 
     var encode = json.decode(response.body);
-    print(encode);
+
+
     return response;
-//        if (response.statusCode == 200) {
-//          // print("API REQUEST WAS SUCCESSFUL");
-//          // print("${response.body}");
-//
-//          return encode['message'];
-//        } else {
-//          // print("API REQUEST FAILED WOEFULLY");
-//          // print("${response.statusCode}");
-//          // print("${response.statusCode}");
-//          // print("${response.body}");
-//
-//          return encode['message'];
-//        }
   }
 
   Future<http.Response> fetchCallHistory(String token) async {

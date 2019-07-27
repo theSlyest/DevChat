@@ -1,22 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
 import 'package:flutter_paystack/flutter_paystack.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
-import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/widget/ui_snackbar.dart';
-import '../../data_store/user_details.dart';
 import '../../data_store/api_service.dart';
-import '../../data_store/local_storage_helper.dart';
-import '../../model/user.dart';
 
 class FundWalletScreen extends StatefulWidget {
   @override

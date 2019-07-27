@@ -1,13 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:seclot/data_store/api_service.dart';
-import 'package:seclot/data_store/bloc/ice_bloc/ice_bloc.dart';
 import 'package:seclot/model/ice.dart';
-import '../data_store/local_storage_helper.dart';
-import '../data_store/user_details.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import '../utils/color_conts.dart';
-import 'package:http/http.dart' as http;
 
 class IceScreen extends StatefulWidget {
   @override
@@ -17,202 +16,10 @@ class IceScreen extends StatefulWidget {
 class _IceScreenState extends State<IceScreen> {
   var _snackKey = GlobalKey<ScaffoldState>();
 
-  var _loading = false;
-  var _errorOccured = false;
-  var _token = "";
-
-  @override
-  void initState() {
-    super.initState();
-
-    fetchData();
-  }
-
-  void fetchData() {
-    LocalStorageHelper().getToken().then((token) {
-      _token = token;
-
-      APIService().getIce(token).then((iceResponse) {
-        print("In response");
-        iceBloc.setIce(iceResponse);
-      });
-    });
-  }
-
-  void _showDialog() {
-//    setState(() {
-//      _saving_changes = false;
-//      _show_error = false;
-//    });
-
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          // return object of type Dialog
-          return AddICeDialog();
-        });
-  }
-
-  void resumeIce(IceDTO ice) {
-    APIService()
-        .updateIce(iceId: ice.id, pause: false, token: _token)
-        .then((response) {
-      print(_token);
-      print(ice.id);
-      print(response.statusCode);
-      print(response.body);
-
-      iceBloc.setIce(response);
-    });
-  }
-
-  var pausing = false;
-  var pauseError = "";
-
-  void _showConfirmPauseDialog(IceDTO ice) {
-    setState(() {
-      pausing = false;
-      pauseError = "";
-    });
-
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          // return object of type Dialog
-          return AlertDialog(
-              title: Text("PAUSE THIS ICE"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text("Are you sure you want to pause this ICE? "
-                      "\nThey will no longer get notified whenever you issue a call"),
-                  Container(
-                    margin: EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      pauseError,
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                ],
-              ),
-              actions: <Widget>[
-                Container(
-                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      FlatButton(
-                          onPressed: (() {
-                            Navigator.of(context).pop();
-                          }),
-                          child: Text("CANCEL")),
-                      pauseButton(ice)
-                    ],
-                  ),
-                )
-              ]);
-        });
-  }
-
-  Widget pauseButton(IceDTO ice) {
-    return pausing
-        ? CircularProgressIndicator()
-        : RaisedButton(
-            onPressed: (() {
-              setState(() {
-                pausing = true;
-              });
-
-              APIService()
-                  .updateIce(iceId: ice.id, pause: true, token: _token)
-                  .then((response) {
-                setState(() {
-                  pausing = false;
-                });
-                print("HANDLING RESPONSE");
-
-                iceBloc.setIce(response);
-              });
-            }),
-            child: Text("PAUSE ICE"),
-            color: Colors.black,
-            textColor: Colors.white);
-  }
-
-  var deleting = false;
-  var deletError = "";
-  void _showConfrimDeleteDialog(IceDTO ice) {
-    setState(() {
-      deleting = false;
-      deletError = "";
-    });
-
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          // return object of type Dialog
-          return AlertDialog(
-              title: Text("DELETE ICE"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                      "Are you sure you want to delete this ICE? \n[NOTE: this action cannot be undone]"),
-                  Container(
-                    margin: EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      deletError,
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                ],
-              ),
-              actions: <Widget>[
-                Container(
-                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      FlatButton(
-                          onPressed: (() {
-                            Navigator.of(context).pop();
-                          }),
-                          child: Text("CANCEL")),
-                      deleteButton(ice)
-                    ],
-                  ),
-                )
-              ]);
-        });
-  }
-
-  Widget deleteButton(IceDTO ice) {
-    return deleting
-        ? CircularProgressIndicator()
-        : RaisedButton(
-            onPressed: (() {
-              setState(() {
-                deleting = true;
-              });
-
-              APIService().deleteIce(ice.id, _token).then((response) {
-                deleting = false;
-
-                Navigator.of(context).pop();
-                iceBloc.setIce(response);
-              });
-            }),
-            child: Text("DELETE ICE"),
-            color: Colors.black,
-            textColor: Colors.white);
-  }
-
+  AppStateProvider appState;
   @override
   Widget build(BuildContext context) {
-    IceBloc iceBloc = IceProvider.of(context);
+    appState = Provider.of<AppStateProvider>(context);
 
     return Scaffold(
         key: _snackKey,
@@ -235,62 +42,9 @@ class _IceScreenState extends State<IceScreen> {
             textAlign: TextAlign.left,
           ),
         ),
-        body: getLayout());
-  }
-
-  Widget getLayout() {
-    return StreamBuilder(
-        stream: iceBloc.userIces,
-        builder: (BuildContext context, AsyncSnapshot<IceDAO> snapshot) {
-          if (!snapshot.hasData) {
-            return Center(
-                child: Container(
-                    height: 100.0,
-                    width: 100.0,
-                    child: CircularProgressIndicator()));
-          } else if (snapshot.hasError) {
-            return Container(
-              padding: EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    "Error fetching data from server, please check your network and click retry",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(),
-                  ),
-                  SizedBox(
-                    height: 16.0,
-                  ),
-                  Text(
-                    "[If problem persists, please logout and login again]",
-                    style: TextStyle(fontSize: 12.0),
-                  ),
-                  SizedBox(
-                    height: 16.0,
-                  ),
-                  RaisedButton(
-                      onPressed: (() {
-                        fetchData();
-                      }),
-                      child: Text(
-                        "RETRY",
-                        style: TextStyle(
-                            fontSize: 16.0, fontWeight: FontWeight.bold),
-                      ))
-                ],
-              ),
-            );
-          } else {
-//            if (snapshot.data == null) {
-//              return Container();
-//            }
-
-            var iceDao = snapshot.data;
-
-            if (iceDao.personalIce.isEmpty && iceDao.cooperateIce.isEmpty) {
-              return Container(
+        body: (appState.ice.personalIce.isEmpty &&
+                appState.ice.cooperateIce.isEmpty)
+            ? Container(
                 padding: EdgeInsets.all(24.0),
                 child: Center(
                   child: Column(
@@ -313,11 +67,8 @@ class _IceScreenState extends State<IceScreen> {
                     ],
                   ),
                 ),
-              );
-            }
-            return _IceContactList(iceDao);
-          }
-        });
+              )
+            : _IceContactList(appState.ice));
   }
 
   Widget _IceContactList(IceDAO iceDao) {
@@ -431,12 +182,201 @@ class _IceScreenState extends State<IceScreen> {
               _showConfirmPauseDialog(ice);
             }));
   }
+
+  void _showDialog() {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AddICeDialog(appState);
+        });
+  }
+
+  Future resumeIce(IceDTO ice) async {
+    try {
+      var ices = await APIService()
+          .updateIce(iceId: ice.id, pause: false, token: appState.token);
+      appState.updateIce = ices;
+    } catch (e) {
+//                  _errorMessage = json.decode(response.body)['message'];
+//      _errorMessage =
+//      "Error saving changes, check your internet and try again";
+//      setState(() {
+//        _show_error = true;
+//      });
+      print(e);
+    }
+  }
+
+  var pausing = false;
+  var pauseError = "";
+
+  void _showConfirmPauseDialog(IceDTO ice) {
+    setState(() {
+      pausing = false;
+      pauseError = "";
+    });
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+              title: Text("PAUSE THIS ICE"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text("Are you sure you want to pause this ICE? "
+                      "\nThey will no longer get notified whenever you issue a call"),
+                  Container(
+                    margin: EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      pauseError,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
+                ],
+              ),
+              actions: <Widget>[
+                Container(
+                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      FlatButton(
+                          onPressed: (() {
+                            Navigator.of(context).pop();
+                          }),
+                          child: Text("CANCEL")),
+                      pauseButton(ice)
+                    ],
+                  ),
+                )
+              ]);
+        });
+  }
+
+  Widget pauseButton(IceDTO ice) {
+    return pausing
+        ? CircularProgressIndicator()
+        : RaisedButton(
+            onPressed: (() async {
+              setState(() {
+                pausing = true;
+              });
+
+              /*  APIService()
+              .updateIce(iceId: ice.id, pause: true, token: _token)
+              .then((response) {
+            setState(() {
+              pausing = false;
+            });
+            print("HANDLING RESPONSE");
+
+            iceBloc.setIce(response);
+          });*/
+
+              try {
+                var ices = await APIService().updateIce(
+                    iceId: ice.id, pause: true, token: appState.token);
+                appState.updateIce = ices;
+              } catch (e) {
+                print(e);
+              }
+
+              setState(() {
+                pausing = false;
+              });
+            }),
+            child: Text("PAUSE ICE"),
+            color: Colors.black,
+            textColor: Colors.white);
+  }
+
+  var deleting = false;
+  var deletError = "";
+  void _showConfrimDeleteDialog(IceDTO ice) {
+    setState(() {
+      deleting = false;
+      deletError = "";
+    });
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+              title: Text("DELETE ICE"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                      "Are you sure you want to delete this ICE? \n[NOTE: this action cannot be undone]"),
+                  Container(
+                    margin: EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      deletError,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
+                ],
+              ),
+              actions: <Widget>[
+                Container(
+                  margin: EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      FlatButton(
+                          onPressed: (() {
+                            Navigator.of(context).pop();
+                          }),
+                          child: Text("CANCEL")),
+                      deleteButton(ice)
+                    ],
+                  ),
+                )
+              ]);
+        });
+  }
+
+  Widget deleteButton(IceDTO ice) {
+    return deleting
+        ? CircularProgressIndicator()
+        : RaisedButton(
+            onPressed: (() async {
+              setState(() {
+                deleting = true;
+              });
+/*
+          APIService().deleteIce(ice.id, _token).then((response) {
+            deleting = false;
+
+            Navigator.of(context).pop();
+            iceBloc.setIce(response);
+          });*/
+
+              try {
+                var ices = await APIService().deleteIce(ice.id, appState.token);
+                appState.updateIce = ices;
+              } catch (e) {
+                print(e);
+              }
+            }),
+            child: Text("DELETE ICE"),
+            color: Colors.black,
+            textColor: Colors.white);
+  }
 }
 
 class AddICeDialog extends StatefulWidget {
-  AddICeDialog({Key key, this.title}) : super(key: key);
+  AddICeDialog(this.appState, {Key key, this.title}) : super(key: key);
 
   final String title;
+  final AppStateProvider appState;
 
   @override
   _AddICeDialogState createState() => _AddICeDialogState();
@@ -563,51 +503,28 @@ class _AddICeDialogState extends State<AddICeDialog> {
     return _saving_changes
         ? Center(child: CircularProgressIndicator())
         : FlatButton(
-            onPressed: () {
+            onPressed: () async {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
                 setState(() {
                   _saving_changes = true;
                 });
 
-                LocalStorageHelper().getToken().then((token) {
-                  if (token.isEmpty) {
-                    //error
+                try {
+                  var ices = await APIService.getInstance()
+                      .saveIce(_name, _phone, widget.appState.token);
 
-                    setState(() {
-                      _saving_changes = false;
-                    });
-                  } else {
-//                    print(token);
+                  widget.appState.updateIce = ices;
 
-                    APIService.getInstance()
-                        .saveIce(_name, _phone, token)
-                        .then((response) {
-                      _saving_changes = false;
-
-                      if (response.statusCode != 200) {
-                        _errorMessage = json.decode(response.body)['message'];
-
-                        setState(() {
-                          _show_error = true;
-                        });
-
-                        return;
-                      } else {
-                        iceBloc.setIce(response);
-                      }
-
-                      Navigator.of(context).pop();
-                      //done
-                    }).catchError((error) {
-                      _errorMessage =
-                          "Error saving changes, check your internet and try again";
-                      setState(() {
-                        _show_error = true;
-                      });
-                    });
-                  }
-                });
+                  Navigator.of(context).pop();
+                } catch (e) {
+//                  _errorMessage = json.decode(response.body)['message'];
+                  _errorMessage =
+                      "Error saving changes, check your internet and try again";
+                  setState(() {
+                    _show_error = true;
+                  });
+                }
               }
             },
             child: Text(

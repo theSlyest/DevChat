@@ -100,8 +100,3 @@ class IceBloc {
 }
 
 final iceBloc = IceBloc();
-
-class IceDAO {
-  var personalIce = List<IceDTO>();
-  var cooperateIce = List<IceDTO>();
-}

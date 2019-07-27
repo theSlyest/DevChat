@@ -9,50 +9,46 @@ import 'package:seclot/providers/AppStateProvider.dart';
 import '../data_store/api_service.dart';
 import '../data_store/local_storage_helper.dart';
 import '../utils/routes_utils.dart';
+import 'home/home.dart';
 //import 'package:paystack_sdk/paystack_sdk.dart';
 
 class SplashScreen extends StatelessWidget {
   AppStateProvider appState;
-
 
   @override
   Widget build(BuildContext context) {
     appState = Provider.of<AppStateProvider>(context);
     Future.delayed(Duration.zero, () => checkLoginDetails(context));
 
-    return  Scaffold(
+    return Scaffold(
       body: Page(),
     );
   }
 
   Future checkLoginDetails(BuildContext context) async {
-
     getLocation();
 //    print("appState");
 
-  try {
-    LocalStorageHelper helper = LocalStorageHelper();
-    var userAndToken = await helper.getUserAndToken();
-    appState.token = userAndToken.token;
-    appState.user = userAndToken.user;
+    try {
+      LocalStorageHelper helper = LocalStorageHelper();
+      var userAndToken = await helper.getUserAndToken();
+      appState.token = userAndToken.token;
+      appState.user = userAndToken.user;
 
-    if (appState.token.isEmpty || appState.user == null) {
+      if (appState.token.isEmpty || appState.user == null) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            RoutUtils.login, (Route<dynamic> route) => false);
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => HomeScreen(appState)),
+            (Route<dynamic> route) => false);
+      }
+    } catch (e) {
+      print(e);
+
       Navigator.of(context).pushNamedAndRemoveUntil(
           RoutUtils.login, (Route<dynamic> route) => false);
-    } else {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-          RoutUtils.home, (Route<dynamic> route) => false);
     }
-  }catch(e){
-    print(e);
-
-    Navigator.of(context).pushNamedAndRemoveUntil(
-        RoutUtils.login, (Route<dynamic> route) => false);
-  }
-
-
-
-
 
     /*LocalStorageHelper().getLoginDetails().then((details) {
       if (details.isNotEmpty && details.contains("token")) {
@@ -87,7 +83,7 @@ class SplashScreen extends StatelessWidget {
   }
 
   Future getLocation() async {
-    Future.delayed(Duration(seconds: 4), (){
+    Future.delayed(Duration(seconds: 4), () {
       appState.setLocation(latitude: 9.0820, longitude: 8.6753);
     });
     print("getting location");
@@ -104,15 +100,11 @@ class SplashScreen extends StatelessWidget {
       appState.setLocation(
           latitude: currentLocation.latitude,
           longitude: currentLocation.longitude);
-
     } on PlatformException catch (e) {
       print("error getting location");
-      if (e.code == 'PERMISSION_DENIED') {
-
-      }
+      if (e.code == 'PERMISSION_DENIED') {}
       currentLocation = null;
     }
-
   }
 
   Widget Page() {

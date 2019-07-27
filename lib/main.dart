@@ -59,7 +59,7 @@ class App extends StatelessWidget {
             RoutUtils.splash: (context) => SplashScreen(),
             RoutUtils.login: (context) => LoginScreen(),
             RoutUtils.auth: (context) => AuthScreen(),
-            RoutUtils.home: (context) => HomeScreen(),
+//            RoutUtils.home: (context) => HomeScreen(),
             RoutUtils.create_profile: (context) => CreateProfileScreen(),
             RoutUtils.view_profile: (context) => ViewProfile(),
             RoutUtils.ices: (context) => IceScreen(),

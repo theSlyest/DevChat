@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/data_store/user_details.dart';
+import 'package:seclot/model/ice.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/scopped_model/user_scopped_model.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -15,10 +16,13 @@ import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:seclot/utils/routes_utils.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'make_call_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  HomeScreen(this.appStateProvider);
+  final AppStateProvider appStateProvider;
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -31,72 +35,65 @@ class _HomeScreenState extends State<HomeScreen> {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   var localStorage = LocalStorageHelper();
 
-//  final userModel = UserModel();
-
+  bool dataFetched = false;
+  bool dataSet = false;
   Widget navigationDrawer() {
-    const double textSize = 18.0;
+    const double textSize = 15.0;
+    const double iconSize = 22.0;
     return Drawer(
       child: Column(
         children: <Widget>[
-          DrawerHeader(
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              width: MediaQuery.of(context).size.width / 0.3,
-              child: Column(
-                children: <Widget>[
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      appStateProvider.user.picture.isNotEmpty
-                          ? Container(
-                              height: 100.0,
-                              width: 100.0,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  border: Border.all(
-                                      color: Colors.black, width: 1.0),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                          appStateProvider.user.picture),
-                                      fit: BoxFit.cover)),
-                            )
-                          : Container(
-                              child: Image.asset(ImageUtils.person_avatar),
-                              height: 100.0,
-                              width: 100.0,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  border: Border.all(
-                                      color: Colors.black, width: 3.0))),
-                      SizedBox(width: 16.0),
-                      Expanded(
-                        child: Text(
-//                          _name,
-                          "${appStateProvider.user.firstName} ${appStateProvider.user.lastName}",
-                          style: TextStyle(fontSize: 18.0, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(ImageUtils.nav_header_background_phone),
-                fit: BoxFit.fill,
-              ),
-            ),
-          ),
           SizedBox(
-            height: 10.0,
+            height: 160,
+            child: DrawerHeader(
+              child: Container(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          height: 60.0,
+                          width: 60.0,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              border:
+                                  Border.all(color: Colors.black, width: 1.0),
+                              image: DecorationImage(
+                                  image: appStateProvider
+                                          .user.picture.isNotEmpty
+                                      ? CachedNetworkImageProvider(
+                                          appStateProvider.user.picture)
+                                      : AssetImage(ImageUtils.person_avatar),
+                                  fit: BoxFit.cover)),
+                        ),
+                        SizedBox(width: 16.0),
+                        Expanded(
+                          child: Text(
+//                          _name,
+                            "${appStateProvider.user.firstName} ${appStateProvider.user.lastName}",
+                            style:
+                                TextStyle(fontSize: 16.0, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(ImageUtils.nav_header_background_phone),
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ),
           ),
           Padding(
-            padding:
-                EdgeInsets.only(left: 24.0, top: 4.0, bottom: 8.0, right: 16.0),
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
             child: ListTile(
               title: Text(
                 'Home',
@@ -104,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               leading: ImageIcon(
                 AssetImage(ImageUtils.home),
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -119,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               leading: ImageIcon(
                 AssetImage(ImageUtils.profile),
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -135,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               leading: ImageIcon(
                 AssetImage(ImageUtils.ice),
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -152,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: Icon(
                 EvaIcons.bellOutline,
                 color: Colors.grey,
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -168,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               leading: ImageIcon(
                 AssetImage(ImageUtils.history),
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -184,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               leading: ImageIcon(
                 AssetImage(ImageUtils.wallet),
+                size: iconSize,
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -205,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   leading: ImageIcon(
                     AssetImage(ImageUtils.logout),
+                    size: iconSize,
                     color: Colors.white,
                   ),
                   onTap: () {
@@ -226,9 +230,14 @@ class _HomeScreenState extends State<HomeScreen> {
   AppStateProvider appStateProvider;
 
   @override
-  Widget build(BuildContext context) {
-    appStateProvider = Provider.of<AppStateProvider>(context);
+  void initState() {
+    appStateProvider = widget.appStateProvider;
+    fetchData();
+    super.initState();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
         key: _scaffoldKey,
         drawer: navigationDrawer(),
@@ -241,48 +250,77 @@ class _HomeScreenState extends State<HomeScreen> {
         body: SafeArea(
             child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Container(
-            margin: EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text('Help', style: TextStyle(fontSize: 32.0)),
-                SizedBox(
-                  height: 8.0,
-                ),
-                Text('..A button away', style: TextStyle(fontSize: 18.0)),
-                Expanded(
-                  flex: 5,
-                  child: Container(
-                    child: Center(
-                        child: Image.asset(
-                      ImageUtils.home_phone,
-                      width: 300.0,
-                    )),
-                  ),
-                ),
-                Container(
-                    margin: EdgeInsets.only(bottom: 24.0),
-                    child: SizedBox(
-                        width: double.maxFinite,
-                        height: MarginUtils.buttonHeight,
-                        child: RaisedButton(
-                            color: Colors.black,
-                            onPressed: () {
-//                              InputDialog();
-//                                  _showDialog();
+          child: StreamBuilder<IceDAO>(
+              stream: iceController,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  if (!dataSet) {
+                    Future.delayed(Duration.zero, () {
+                      appStateProvider.ice = snapshot.data;
+                    });
+                  }
+                  return Container(
+                    margin: EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Text('Help', style: TextStyle(fontSize: 32.0)),
+                        SizedBox(
+                          height: 8.0,
+                        ),
+                        Text('..A button away',
+                            style: TextStyle(fontSize: 18.0)),
+                        Expanded(
+                          flex: 5,
+                          child: Container(
+                            child: Center(
+                                child: Image.asset(
+                              ImageUtils.home_phone,
+                              width: 300.0,
+                            )),
+                          ),
+                        ),
+                        Container(
+                            margin: EdgeInsets.only(bottom: 24.0),
+                            child: SizedBox(
+                                width: double.maxFinite,
+                                height: MarginUtils.buttonHeight,
+                                child: RaisedButton(
+                                    color: Colors.black,
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  MakeCallScreen()));
+                                    },
+                                    child: Text(
+                                      'Distress Call',
+                                      style: TextStyle(
+                                          fontSize: 18.0, color: Colors.white),
+                                    )))),
+                      ],
+                    ),
+                  );
+                }
 
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => MakeCallScreen()));
-                            },
-                            child: Text(
-                              'Distress Call',
-                              style: TextStyle(
-                                  fontSize: 18.0, color: Colors.white),
-                            )))),
-              ],
-            ),
-          ),
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Column(
+                    children: <Widget>[
+                      Text("Error feching data, please check your network"),
+                      FlatButton.icon(
+                          onPressed: () {
+                            fetchData();
+                            setState(() {});
+                          },
+                          icon: Icon(EvaIcons.refreshOutline),
+                          label: Text("Retry"))
+                    ],
+                  ));
+                }
+
+                return Center(child: CircularProgressIndicator());
+              }),
         )));
   }
 
@@ -290,9 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: EdgeInsets.all(16.0),
       child: Column(
-//            mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
-//            crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text('Sending...', style: TextStyle(fontSize: 48.0)),
           Expanded(
@@ -314,35 +350,9 @@ class _HomeScreenState extends State<HomeScreen> {
     var currentLocation = <String, double>{};
     var location = new Location();
 
-    /*try {
-      location.getLocation().then((loc) {
-        currentLocation = loc;
-
-        APIService()
-            .updateLocation(
-                token: profile.getUserData().token,
-                latitude: currentLocation["latitude"],
-                longitude: currentLocation["longitude"])
-            .then((success) {
-          if (success) {
-//            showToast("LOCATION UPDATED");
-          } else {
-            showToast(
-                "Error updating location, ensure your location services is turned on and access granted to seclot");
-          }
-        });
-      });
-    } on PlatformException {
-      currentLocation = null;
-    }*/
-
     userModel.setUser(profile.getUserData());
 
     return profile;
-//    setState(() {
-//      _name =
-//          "${profile.getUserData().firstName} ${profile.getUserData().lastName}";
-//    });
   }
 
   void showToast(String message) {
@@ -355,30 +365,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void setupFirebaseMessaging() {
-    /*_firebaseMessaging.configure(
-      onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
-//        _showItemDialog(message);
-      },
-      onLaunch: (Map<String, dynamic> message) async {
-        print("onLaunch: $message");
-//        _navigateToItemDetail(message);
-      },
-      onResume: (Map<String, dynamic> message) async {
-        print("onResume: $message");
-//        _navigateToItemDetail(message);
-      },
-    );
-    _firebaseMessaging.requestNotificationPermissions(
-        const IosNotificationSettings(sound: true, badge: true, alert: true));*/
-//    _firebaseMessaging.onIosSettingsRegistered
-//        .listen((IosNotificationSettings settings) {
-//      print("Settings registered: $settings");
-//    });
     localStorage.hasSentToken().then((sent) {
       if (!sent) {
         _firebaseMessaging.getToken().then((String notificationId) {
-//      assert(token != null);
           if (notificationId != null) {
             print("Messaging oken => $notificationId");
             localStorage.getToken().then((token) {
@@ -400,5 +389,11 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
+  }
+
+  Observable<IceDAO> iceController;
+  void fetchData() {
+    iceController = Observable.fromFuture(
+        APIService.getInstance().fetchIce(appStateProvider.token));
   }
 }

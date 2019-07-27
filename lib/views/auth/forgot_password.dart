@@ -9,14 +9,16 @@ import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:seclot/utils/routes_utils.dart';
+import 'package:seclot/views/home/home.dart';
 import 'package:seclot/views/new_user.dart';
 import 'package:seclot/views/widget/ui_snackbar.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final String authCode;
+  final String phone;
 
 //  const OTPScreen({this.phoneNumber});
-  const ForgotPasswordScreen({Key key, @required this.authCode})
+  const ForgotPasswordScreen({Key key, @required this.authCode, this.phone})
       : super(key: key);
 
   @override
@@ -129,63 +131,66 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   Future<bool> _onWillPop() {
     return showDialog(
-      context: context,
-      builder: (context) => new AlertDialog(
-        title: new Text('Are you sure?'),
-        content: new Text('Note: If you exit now, you will have to start the process afresh.'),
-        actions: <Widget>[
-          new FlatButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: new Text('CONTINUE'),
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: new Text('Are you sure?'),
+            content: new Text(
+                'Note: If you exit now, you will have to start the process afresh.'),
+            actions: <Widget>[
+              new FlatButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: new Text('CONTINUE'),
+              ),
+              new FlatButton(
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, RoutUtils.login, (_) => false);
+                },
+                child: new Text('EXIT'),
+              ),
+            ],
           ),
-          new FlatButton(
-            onPressed: (){
-              Navigator.pushNamedAndRemoveUntil(context, RoutUtils.login, (_) => false);
-    },
-            child: new Text('EXIT'),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) {
     appStateProvider = Provider.of<AppStateProvider>(context);
-    return WillPopScope(child: Scaffold(
-      key: _scaffoldKey,
-      appBar: new AppBar(
-        backgroundColor: Colors.black,
-        title: Text("SET NEW PIN"),
-      ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: <Widget>[
-                Text(
-                  "Enter your new pin below",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18.0),
+    return WillPopScope(
+        child: Scaffold(
+          key: _scaffoldKey,
+          appBar: new AppBar(
+            backgroundColor: Colors.black,
+            title: Text("SET NEW PIN"),
+          ),
+          body: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      "Enter your new pin below",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                    SizedBox(
+                      height: 30.0,
+                    ),
+                    pin(),
+                    reenter_pin(),
+                    SizedBox(
+                      height: 20.0,
+                    ),
+                    forgot_password(context)
+                  ],
                 ),
-                SizedBox(
-                  height: 30.0,
-                ),
-                pin(),
-                reenter_pin(),
-                SizedBox(
-                  height: 20.0,
-                ),
-                forgot_password(context)
-              ],
+              ),
             ),
           ),
         ),
-      ),
-    ),
-
         onWillPop: _onWillPop);
   }
 
@@ -205,16 +210,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
               showInSnackBar("New password changed");
 
-              appStateProvider.user = value.user;
+              var user = value.user;
+              user.phone = widget.phone;
+
+              appStateProvider.user = user;
               appStateProvider.token = value.token;
+              value.user = user;
+
               appStateProvider.password = _pin;
               value.password = _pin;
               appStateProvider.saveDetails(value);
 
               Future.delayed(
                   Duration(seconds: 2),
-                  () => Navigator.of(context).pushNamedAndRemoveUntil(
-                      RoutUtils.home, (Route<dynamic> route) => false));
+                  () => Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                          builder: (context) => HomeScreen(appStateProvider)),
+                      (Route<dynamic> route) => false));
             }
           } catch (e) {
             print(e);

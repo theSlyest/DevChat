@@ -118,7 +118,7 @@ class UserDTO {
         'lastKnownLocation': {'latitude': latitude, 'longitude': longitude},
         'accountCreationDate': accountCreationDate,
         'plan': plan,
-        'phone': phone,
+        'phoneNumber': phone,
         'accountStatus': accountStatus,
         'nextBillDate': nextBillDate
       };

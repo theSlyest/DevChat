@@ -18,10 +18,12 @@ import '../utils/color_conts.dart';
 import '../utils/margin_utils.dart';
 import '../utils/routes_utils.dart';
 import '../views/create_edit_profile.dart';
+import 'home/home.dart';
 
 class NewUserScreen extends StatefulWidget {
-  NewUserScreen({@required this.authCode});
+  NewUserScreen({@required this.authCode, this.phone});
   String authCode;
+  String phone;
 
   @override
   _NewUserScreenState createState() => _NewUserScreenState();
@@ -433,15 +435,23 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
                     var userData = await APIService().newUser(body);
 
                     showInSnackBar("Account created");
-                    appStateProvider.user = userData.user;
+
+
+                    var user = userData.user;
+                    user.phone = widget.phone;
+                    userData.user = user;
+
+                    appStateProvider.user = user;
+
+
                     appStateProvider.token = userData.token;
                     appStateProvider.password = _pin;
                     appStateProvider.saveDetails(userData);
 
                     Future.delayed(
                         Duration(seconds: 2),
-                        () => Navigator.of(context).pushNamedAndRemoveUntil(
-                            RoutUtils.home, (Route<dynamic> route) => false));
+                        () => Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => HomeScreen(appStateProvider)), (Route<dynamic> route) => false));
                   } catch (err) {
                     print(err);
                     if (err == null ||

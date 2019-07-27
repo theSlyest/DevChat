@@ -1,20 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_masked_text/flutter_masked_text.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/funding/fund_wallet.dart';
+import 'package:seclot/views/home/home.dart';
 import '../data_store/user_details.dart';
 import '../data_store/api_service.dart';
-import '../data_store/local_storage_helper.dart';
 import '../model/user.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -596,10 +592,11 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
     super.dispose();
   }
 
+  AppStateProvider appStateProvider;
   @override
   Widget build(BuildContext context) {
+    appStateProvider = Provider.of<AppStateProvider>(context);
     return SimpleDialog(
-//      title: new Text("New Dialog"),
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.all(16.0),
@@ -631,8 +628,10 @@ class _UpdateSubscriptionDialogState extends State<UpdateSubscriptionDialog> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                    RoutUtils.home, (Route<dynamic> route) => false);
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => HomeScreen(appStateProvider)),
+                    (Route<dynamic> route) => false);
               },
             ),
             _updateSubscription(),

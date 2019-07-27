@@ -3,61 +3,83 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/model/ice.dart';
+import 'package:seclot/model/notification.dart';
 import 'package:seclot/model/user.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-class AppStateProvider extends ChangeNotifier{
+class AppStateProvider extends ChangeNotifier {
+  DatabaseReference dbRef;
+  DatabaseReference ref;
+  FirebaseDatabase database = FirebaseDatabase.instance;
   AppState appState;
-  
+
   UserDTO get user => appState.user;
   String get token => appState.token;
   String get password => appState.password;
   double get latitude => appState.latitude;
   double get longitude => appState.longitude;
-  List<IceDTO> get personalIces => appState.personalIces;
-  List<IceDTO> get corporateIces => appState.corporateIces;
+  IceDAO get ice => appState.iceDAO;
 
-  AppStateProvider(){
+  AppStateProvider() {
     appState = AppState();
+    database.setPersistenceEnabled(true);
+    database.setPersistenceCacheSizeBytes(10000000);
   }
 
-  set latitude(double latitude){
+  set latitude(double latitude) {
     appState.latitude = latitude;
   }
 
-  set longitude(double longitude){
+  set longitude(double longitude) {
     appState.longitude = longitude;
   }
 
-  set user(UserDTO user){
+  set user(UserDTO user) {
+    print("updating user => ${user.toFullJson()}");
     appState.user = user;
+    if (latitude == -0.0 && longitude == -0.0) {
+      latitude = user.latitude;
+      longitude = user.longitude;
+    }
+    //setup notification listener
+    ref = database.reference().child(user.phone);
+    saveInfo();
+    watchNotification();
     notifyListeners();
   }
 
-  set token(String token){
+  set token(String token) {
     appState.token = token;
     notifyListeners();
   }
-  set password(String token){
+
+  set password(String token) {
     appState.password = token;
     notifyListeners();
   }
 
-  set personalIce(List<IceDTO> ices){
-    appState.personalIces = ices;
+  set ice(IceDAO ice) {
+    if ((ice.cooperateIce.isNotEmpty && appState.iceDAO.cooperateIce.isEmpty) ||
+        (ice.personalIce.isNotEmpty && appState.iceDAO.personalIce.isEmpty)) {
+      appState.iceDAO = ice;
+      print("setting ice now... $ice");
+    }
+
+//    notifyListeners();
+  }
+
+  set updateIce(IceDAO ice) {
+    appState.iceDAO = ice;
+    print("setting ice now...");
     notifyListeners();
   }
 
-  set corporateIce(List<IceDTO> ices){
-    appState.corporateIces = ices;
-    notifyListeners();
-  }
-
-  void saveDetails(UserAndToken userAndToken){
+  void saveDetails(UserAndToken userAndToken) {
     LocalStorageHelper helper = LocalStorageHelper();
     helper.saveUserAndToken(userAndToken);
   }
 
-  void logout(){
+  void logout() {
     LocalStorageHelper helper = LocalStorageHelper();
     helper.clearUserAndToken();
   }
@@ -65,29 +87,68 @@ class AppStateProvider extends ChangeNotifier{
   void setLocation({double latitude, double longitude}) {
     this.latitude = latitude;
     this.longitude = longitude;
-    notifyListeners();
+
+    //save lat lon
   }
+
+  void watchNotification() {
+    ref.child("notifications").onValue.listen((event) {
+      print("notification added value changed");
+      print("NOTIFICAITONS => ${event.snapshot.value}");
+    });
+
+    ref.child("newNotifications").onValue.listen((event) {
+      print("new notification");
+      print("NEW NOTIFICATIONS => ${event.snapshot.value}");
+    });
+  }
+
+  void sendNotification() {
+    //send
+    var ices = <String>[];
+    ices.addAll(ice.personalIce.map((ic) => ic.phoneNumber).toList());
+    ices.addAll(ice.cooperateIce.map((ic) => ic.phoneNumber).toList());
+
+    var notif = NotificationDTO();
+    notif.type = "distress";
+    notif.latitude = user.latitude;
+    notif.longitude = user.longitude;
+    notif.message =
+        "${user.firstName} ${user.lastName} is in trouble. Needs your help. Last known location lat: ${latitude} lon: ${longitude}. Hurry!!!";
+    ref
+        .child("sent")
+        .push()
+        .set({"notification": notif.toMap(), "recipients": ices});
+  }
+
+  void saveInfo() {
+    print("saving info to ${appState.user.phone}");
+    //saving info
+    ref.child("profile").update(user.toFullJson());
+  }
+
+//  void cancelSubscriptions();
 }
 
-class AppState{
-  double latitude;
-  double longitude;
+class AppState {
+  double latitude = -0.0;
+  double longitude = -0.0;
   UserDTO user;
   String token;
   String password;
-  List<IceDTO> personalIces;
-  List<IceDTO> corporateIces;
+  IceDAO iceDAO;
 
-  AppState(){
+  AppState() {
     user = null;
     token = "";
     password = "";
-    personalIces = [];
-    corporateIces = [];
+    iceDAO = IceDAO()
+      ..personalIce = []
+      ..cooperateIce = [];
   }
 }
 
-class UserAndToken{
+class UserAndToken {
   String token = "";
   UserDTO user;
   String password;

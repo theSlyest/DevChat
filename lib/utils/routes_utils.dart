@@ -4,7 +4,7 @@ class RoutUtils {
   static final String login = "/1";
   static final String auth = "/2";
   static final String otp = "/3";
-  static final String home = "/4";
+//  static final String home = "/4";
   static final String ices = "/5";
   static final String wallet = "/6";
   static final String payment = "/7";

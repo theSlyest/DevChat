@@ -354,6 +354,7 @@ class _MakeCallScreenState extends State<MakeCallScreen>
   }
 
   _makeCall() {
+    appStateProvider.sendNotification();
     APIService.getInstance()
         .sendDistressCall(appStateProvider.token)
         .then((response) {

@@ -12,6 +12,7 @@ import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/auth/otp.dart';
 import 'package:seclot/views/auth_screen.dart';
+import 'package:seclot/views/home/home.dart';
 import 'package:seclot/views/widget/ui_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -183,7 +184,8 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => AuthScreen(forgot: true)));
+                                  builder: (context) =>
+                                      AuthScreen(forgot: true)));
                         },
                         child: Text(
                           "Forgot password?",
@@ -217,6 +219,7 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
 //      print("signin succes token => ${userData.token}");
 
         if (_rememberMe) {
+          userData.user.phone = _phoneNumber;
           appStateProvider.user = userData.user;
           appStateProvider.token = userData.token;
           appStateProvider.password = _pin;
@@ -225,8 +228,10 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
 
         Future.delayed(
             Duration(seconds: 2),
-            () => Navigator.of(context).pushNamedAndRemoveUntil(
-                RoutUtils.home, (Route<dynamic> route) => false));
+            () => Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                    builder: (context) => HomeScreen(appStateProvider)),
+                (Route<dynamic> route) => false));
       } catch (err) {
         print(err);
 

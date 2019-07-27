@@ -343,7 +343,7 @@ class _OTPScreenState extends State<OTPScreen>
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => NewUserScreen(authCode: response.authCode,)));
+                            builder: (context) => NewUserScreen(authCode: response.authCode, phone: widget.phoneNumber)));
                   } else {
 
                     if(!widget.forgot){
@@ -369,7 +369,7 @@ class _OTPScreenState extends State<OTPScreen>
                         context,
                         MaterialPageRoute(
                             builder: (context) => ForgotPasswordScreen(
-                                authCode: response.authCode)));
+                                authCode: response.authCode, phone: widget.phoneNumber)));
                   }
                 } catch (e) {
                   print(e);
