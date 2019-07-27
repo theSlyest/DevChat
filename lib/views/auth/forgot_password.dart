@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
@@ -33,7 +35,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   @override
   void initState() {
     print("${widget.authCode}");
-    
+
     super.initState();
   }
 
@@ -123,9 +125,34 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
+  AppStateProvider appStateProvider;
+
+  Future<bool> _onWillPop() {
+    return showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: new Text('Are you sure?'),
+        content: new Text('Note: If you exit now, you will have to start the process afresh.'),
+        actions: <Widget>[
+          new FlatButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: new Text('CONTINUE'),
+          ),
+          new FlatButton(
+            onPressed: (){
+              Navigator.pushNamedAndRemoveUntil(context, RoutUtils.login, (_) => false);
+    },
+            child: new Text('EXIT'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    appStateProvider = Provider.of<AppStateProvider>(context);
+    return WillPopScope(child: Scaffold(
       key: _scaffoldKey,
       appBar: new AppBar(
         backgroundColor: Colors.black,
@@ -151,35 +178,49 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 SizedBox(
                   height: 20.0,
                 ),
-                _login(context)
+                forgot_password(context)
               ],
             ),
           ),
         ),
       ),
-    );
+    ),
+
+        onWillPop: _onWillPop);
   }
 
-  Widget _login(context) {
+  Widget forgot_password(context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: MaterialButton(
         onPressed: () async {
-          try{
+          try {
             if (_formKey.currentState.validate()) {
               _formKey.currentState.save();
 
               showLoadingSnackBar();
 
-              var value =
-              await APIService().setPin(authCode: widget.authCode, pin: _pin);
+              var value = await APIService()
+                  .setPin(authCode: widget.authCode, pin: _pin);
+
+              showInSnackBar("New password changed");
+
+              appStateProvider.user = value.user;
+              appStateProvider.token = value.token;
+              appStateProvider.password = _pin;
+              value.password = _pin;
+              appStateProvider.saveDetails(value);
+
+              Future.delayed(
+                  Duration(seconds: 2),
+                  () => Navigator.of(context).pushNamedAndRemoveUntil(
+                      RoutUtils.home, (Route<dynamic> route) => false));
             }
-          }catch(e){
+          } catch (e) {
             print(e);
 
-
-
-            showInSnackBar("Error setting pin, please check your network and try again");
+            showInSnackBar(
+                "Error setting pin, please check your network and try again");
           }
         },
 

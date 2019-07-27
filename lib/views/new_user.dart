@@ -379,10 +379,10 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
                 SizedBox(
                   height: 10.0,
                 ),
-                address(),
+                /* address(),
                 SizedBox(
                   height: 10.0,
-                ),
+                ),*/
                 pin(),
                 reenter_pin(),
                 SizedBox(
@@ -418,7 +418,7 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
                   body["email"] = _lastName;
                   body["pin"] = _pin;
 
-                  if (_place != null) {
+                  /*if (_place != null) {
                     body["location"] = getLocation();
                   } else {
                     showInSnackBar(
@@ -426,7 +426,9 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
 
                     return;
                   }
+*/
 
+                  body["location"] = getLocation();
                   try {
                     var userData = await APIService().newUser(body);
 
@@ -436,10 +438,10 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
                     appStateProvider.password = _pin;
                     appStateProvider.saveDetails(userData);
 
-                    Future.delayed(Duration(seconds: 2), () =>
-                        Navigator.of(context).pushNamedAndRemoveUntil(
+                    Future.delayed(
+                        Duration(seconds: 2),
+                        () => Navigator.of(context).pushNamedAndRemoveUntil(
                             RoutUtils.home, (Route<dynamic> route) => false));
-
                   } catch (err) {
                     print(err);
                     if (err == null ||
@@ -500,15 +502,24 @@ class _NewUserScreenState extends State<NewUserScreen> with UISnackBarProvider {
 
   PlaceDetails _place;
   Map<String, dynamic> getLocation() {
+    _locationMap["latitude"] =
+        appStateProvider.latitude;//0.3422; //_place.location.latitude; //position.latitude;
+    _locationMap["longitude"] = appStateProvider.longitude;//1.2310;
+//          _place.location.longitude; //position.longitude;
+
+
+    return _locationMap;
+
     if (_place != null) {
-      _locationMap["latitude"] = _place.location.latitude; //position.latitude;
-      _locationMap["longitude"] =
-          _place.location.longitude; //position.longitude;
+      _locationMap["latitude"] =
+          appStateProvider.latitude;//0.3422; //_place.location.latitude; //position.latitude;
+      _locationMap["longitude"] = appStateProvider.longitude;//1.2310;
+//          _place.location.longitude; //position.longitude;
+
 
       return _locationMap;
     }
 
-    return null;
   }
 
   void _view_map() {

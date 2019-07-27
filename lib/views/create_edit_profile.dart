@@ -111,22 +111,25 @@ class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnack
       imageUploading = true;
     });
 
-    LocalStorageHelper().getToken().then((token) {
-      APIService().updateProfileImage(token, image, (success, response) {
-        if (success) {
-          uploadError = false;
-          showToast("Picture updated");
-        } else {
-          uploadError = true;
-          showToast(
-              "Error updating pic, please check your network and try again");
-        }
 
-        setState(() {
-          imageUploading = false;
-        });
+    APIService().updateProfileImage(appStateProvider.token, image, (success, response) {
+      if (success) {
+        uploadError = false;
+        showToast("Picture updated");
+      } else {
+        uploadError = true;
+        showToast(
+            "Error updating pic, please check your network and try again");
+      }
+
+      setState(() {
+        imageUploading = false;
       });
     });
+
+//    LocalStorageHelper().getToken().then((token) {
+//
+//    });
   }
 
   Widget getAddButton() {
@@ -211,7 +214,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnack
                 pin(),
 //                phone(),
                 referealId(),
-                address(),
+//                address(),
 //                selectSector(),
                 Padding(
                   padding: EdgeInsets.all(16.0),
@@ -859,10 +862,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnack
                 user.lastName = _lastName;
                 user.email = _emailController.text;
 
-                if (_place != null) {
+            /*    if (_place != null) {
                   user.latitude = _place.location.latitude;
                   user.longitude = _place.location.longitude;
-                }
+                }*/
 
                 if (_referealIdController.text.isNotEmpty &&
                     user.referralId.isEmpty) {

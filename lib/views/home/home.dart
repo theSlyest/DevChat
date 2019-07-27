@@ -1,25 +1,20 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_image/network.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:scoped_model/scoped_model.dart';
 import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/data_store/user_details.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/scopped_model/user_scopped_model.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-//import 'package:geolocator/geolocator.dart';
 import 'package:location/location.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:seclot/utils/routes_utils.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 
 import 'make_call_screen.dart';
 
@@ -38,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 //  final userModel = UserModel();
 
-
   Widget navigationDrawer() {
     const double textSize = 18.0;
     return Drawer(
@@ -56,28 +50,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: <Widget>[
                       appStateProvider.user.picture.isNotEmpty
                           ? Container(
-                        height: 100.0,
-                        width: 100.0,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                                color: Colors.black, width: 1.0),
-                            image: DecorationImage(
-                                image:
-                                CachedNetworkImageProvider(
-                                    appStateProvider.user.picture),
-                                fit: BoxFit.cover)),
-                      )
+                              height: 100.0,
+                              width: 100.0,
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Colors.black, width: 1.0),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                          appStateProvider.user.picture),
+                                      fit: BoxFit.cover)),
+                            )
                           : Container(
-                          child: Image.asset(ImageUtils.person_avatar),
-                          height: 100.0,
-                          width: 100.0,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              border: Border.all(
-                                  color: Colors.black, width: 3.0))),
+                              child: Image.asset(ImageUtils.person_avatar),
+                              height: 100.0,
+                              width: 100.0,
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Colors.black, width: 3.0))),
                       SizedBox(width: 16.0),
                       Expanded(
                         child: Text(
@@ -103,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Padding(
             padding:
-            EdgeInsets.only(left: 24.0, top: 4.0, bottom: 8.0, right: 16.0),
+                EdgeInsets.only(left: 24.0, top: 4.0, bottom: 8.0, right: 16.0),
             child: ListTile(
               title: Text(
                 'Home',
@@ -146,6 +139,23 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, RoutUtils.ices);
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.0, top: 4.0, right: 16.0),
+            child: ListTile(
+              title: Text(
+                'Notifications',
+                style: TextStyle(fontSize: textSize),
+              ),
+              leading: Icon(
+                EvaIcons.bellOutline,
+                color: Colors.grey,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, RoutUtils.notification);
               },
             ),
           ),
@@ -213,7 +223,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   AppStateProvider appStateProvider;
 
   @override
@@ -221,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
     appStateProvider = Provider.of<AppStateProvider>(context);
 
     return Scaffold(
-      key: _scaffoldKey,
+        key: _scaffoldKey,
         drawer: navigationDrawer(),
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -231,73 +240,73 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         body: SafeArea(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Container(
-                margin: EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Text('Help', style: TextStyle(fontSize: 32.0)),
-                    SizedBox(
-                      height: 8.0,
-                    ),
-                    Text('..A button away', style: TextStyle(fontSize: 18.0)),
-                    Expanded(
-                      flex: 5,
-                      child: Container(
-                        child: Center(
-                            child: Image.asset(
-                              ImageUtils.home_phone,
-                              width: 300.0,
-                            )),
-                      ),
-                    ),
-                    Container(
-                        margin: EdgeInsets.only(bottom: 24.0),
-                        child: SizedBox(
-                            width: double.maxFinite,
-                            height: MarginUtils.buttonHeight,
-                            child: RaisedButton(
-                                color: Colors.black,
-                                onPressed: () {
+          padding: EdgeInsets.all(16.0),
+          child: Container(
+            margin: EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text('Help', style: TextStyle(fontSize: 32.0)),
+                SizedBox(
+                  height: 8.0,
+                ),
+                Text('..A button away', style: TextStyle(fontSize: 18.0)),
+                Expanded(
+                  flex: 5,
+                  child: Container(
+                    child: Center(
+                        child: Image.asset(
+                      ImageUtils.home_phone,
+                      width: 300.0,
+                    )),
+                  ),
+                ),
+                Container(
+                    margin: EdgeInsets.only(bottom: 24.0),
+                    child: SizedBox(
+                        width: double.maxFinite,
+                        height: MarginUtils.buttonHeight,
+                        child: RaisedButton(
+                            color: Colors.black,
+                            onPressed: () {
 //                              InputDialog();
 //                                  _showDialog();
 
-                                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => MakeCallScreen()));
-
-                                },
-                                child: Text(
-                                  'Distress Call',
-                                  style: TextStyle(
-                                      fontSize: 18.0, color: Colors.white),
-                                )))),
-                  ],
-                ),
-              ),
-            )));
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => MakeCallScreen()));
+                            },
+                            child: Text(
+                              'Distress Call',
+                              style: TextStyle(
+                                  fontSize: 18.0, color: Colors.white),
+                            )))),
+              ],
+            ),
+          ),
+        )));
   }
 
   Widget getView() {
     return Container(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
 //            mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
 //            crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text('Sending...', style: TextStyle(fontSize: 48.0)),
-                Expanded(
-                  child: Center(
-                    child: SizedBox(
-                      width: 100.0,
-                      height: 100.0,
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                ),
-              ],
+        children: <Widget>[
+          Text('Sending...', style: TextStyle(fontSize: 48.0)),
+          Expanded(
+            child: Center(
+              child: SizedBox(
+                width: 100.0,
+                height: 100.0,
+                child: CircularProgressIndicator(),
+              ),
             ),
-          );
+          ),
+        ],
+      ),
+    );
   }
 
   Future<UserDetails> getDetails() async {

@@ -73,6 +73,8 @@ class UserDTO {
   }
 
   UserDTO.fromJson(Map<String, dynamic> json) {
+    print("Account info => $json");
+
     firstName = json['firstName'] ?? "";
     lastName = json['lastName'] ?? "";
     address = json['address'] ?? "";
@@ -102,7 +104,8 @@ class UserDTO {
       };
 
   Map<String, dynamic> toFullJson() => {
-        'firstName': firstName,
+
+  'firstName': firstName,
         'lastName': lastName,
         'address': address,
         'seclotId': seclotId,
@@ -115,6 +118,7 @@ class UserDTO {
         'lastKnownLocation': {'latitude': latitude, 'longitude': longitude},
         'accountCreationDate': accountCreationDate,
         'plan': plan,
+        'phone': phone,
         'accountStatus': accountStatus,
         'nextBillDate': nextBillDate
       };

@@ -14,9 +14,10 @@ import 'forgot_password.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
+  final bool forgot;
 
 //  const OTPScreen({this.phoneNumber});
-  const OTPScreen({Key key, this.phoneNumber}) : super(key: key);
+  const OTPScreen({Key key, this.phoneNumber, this.forgot = false}) : super(key: key);
 
   @override
   _OTPScreenState createState() => _OTPScreenState();
@@ -344,6 +345,23 @@ class _OTPScreenState extends State<OTPScreen>
                         MaterialPageRoute(
                             builder: (context) => NewUserScreen(authCode: response.authCode,)));
                   } else {
+
+                    if(!widget.forgot){
+                      bool reset = await showDialog(context: context, builder: (context){
+                        return AlertDialog(
+                          content: Text("Account already exists\n\nIf you forgot your password, click reset below to set a new one"),
+                          actions: <Widget>[
+                            FlatButton(onPressed: (){Navigator.of(context).pop(true);}, child: Text("RESET PASSWORD"),),
+                            FlatButton(onPressed: (){Navigator.of(context).pop(false);}, child: Text("CANCEL")),
+                          ],
+                        ) ?? false;
+                      });
+
+                      if(!reset){
+                        Navigator.of(context).pushNamedAndRemoveUntil(RoutUtils.login, (_) => false);
+                        return;
+                      }
+                    }
                     //navigate to change pin page
                     print("authCode = ${response.authCode}");
 
@@ -356,8 +374,12 @@ class _OTPScreenState extends State<OTPScreen>
                 } catch (e) {
                   print(e);
 
-                  showInSnackBar(
-                      "Error verifying code, please check your network and try again");
+                  if(e == null || e.message == null || e.message.isEmpty) {
+                    showInSnackBar(
+                        "Error verifying code, please check your network and try again");
+                  }else {
+                    showInSnackBar(e.message);
+                  }
                   return;
 
                   if (e.message != null && e.message.isNotEmpty) {

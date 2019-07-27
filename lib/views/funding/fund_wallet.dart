@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
+import 'package:flutter_paystack/flutter_paystack.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:seclot/utils/routes_utils.dart';
+import 'package:seclot/views/widget/ui_snackbar.dart';
 import '../../data_store/user_details.dart';
 import '../../data_store/api_service.dart';
 import '../../data_store/local_storage_helper.dart';
@@ -18,7 +23,9 @@ class FundWalletScreen extends StatefulWidget {
   _FundWalletScreenState createState() => _FundWalletScreenState();
 }
 
-class _FundWalletScreenState extends State<FundWalletScreen> {
+class _FundWalletScreenState extends State<FundWalletScreen>
+    with UISnackBarProvider {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
 
   String _email;
@@ -121,17 +128,9 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
 
   bool paymentReady = false;
 
-  Future<void> initPaystack() async {
-    String paystackKey = "pk_test_71cb8fa98c03c73d3ff040d7ba712af4921b3bf9";
-    try {
-//      await PaystackSDK.initialize(paystackKey);
-      // Paystack is ready for use in receiving payments
-      paymentReady = true;
-    } on PlatformException {
-      // well, error, deal with it
-      paymentReady = true;
-      //error occured
-    }
+  void initPaystack() async {
+    String publicKey = "pk_test_71cb8fa98c03c73d3ff040d7ba712af4921b3bf9";
+    PaystackPlugin.initialize(publicKey: publicKey);
   }
 
   @override
@@ -146,9 +145,13 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
   Widget _seperator = SizedBox(height: 20.0);
   Widget _miniSeperator = SizedBox(height: 8.0);
 
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
+    appStateProvider = Provider.of<AppStateProvider>(context);
     return Scaffold(
+      key: _scaffoldKey,
       appBar: new AppBar(
         title: Text('Fund Account'),
         iconTheme: IconThemeData(color: Colors.white),
@@ -167,16 +170,16 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
-                        Text("Email"),
-                        _miniSeperator,
-                        TextFormField(
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: _emailInputDecoration,
-                          validator: validateEmail,
-                          onSaved: (String val) {
-                            _email = val;
-                          },
-                        ),
+//                        Text("Email"),
+//                        _miniSeperator,
+//                        TextFormField(
+//                          keyboardType: TextInputType.emailAddress,
+//                          decoration: _emailInputDecoration,
+//                          validator: validateEmail,
+//                          onSaved: (String val) {
+//                            _email = val;
+//                          },
+//                        ),
                         _seperator,
                         Text("Amount"),
                         _miniSeperator,
@@ -313,10 +316,6 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
   }
 
   _makePayment() {
-    setState(() {
-      _saving_changes = true;
-    });
-
 //    _expDateYear = "20$_expDateYear";
 
     print(_email);
@@ -326,6 +325,21 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
     print(_expDateYear);
     print(_ccv);
 
+    var paymentCard = PaymentCard(
+        number: _cardNumber,
+        cvc: _ccv,
+        expiryMonth: int.parse(_expDateMonth),
+        expiryYear: int.parse(_expDateYear));
+
+    Charge charge = Charge();
+    charge.card = paymentCard;
+    charge
+      ..amount = 2000
+      ..email = 'user@email.com'
+      ..reference = _getReference()
+      ..putCustomField('Charged From', 'Seclot');
+    _chargeCard(charge);
+
 /*
     // pass card number, cvc, expiry month and year to the Card constructor function
     var card = PaymentCard("507850785078507812", "081", 12, 2020);
@@ -334,7 +348,8 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
     var transaction =
     PaystackTransaction("wisdom.arerosuoghene@gmail.com", 100);*/
 
-    paymentReady = false;
+//    paymentReady = false;
+
     // pass card number, cvc, expiry month and year to the Card constructor function
 //    var card = PaymentCard(
 //        _cardNumber, _ccv, int.parse(_expDateMonth), int.parse(_expDateYear));
@@ -382,16 +397,103 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
 //    });
   }
 
-  void showToast(String message, BuildContext context) {
-    /* final snackBar = SnackBar(
-        content: Text(message),
-    action: SnackBarAction(
-    label: 'Close',
-    onPressed: () {
-    // Some code to undo the change!
-    },
-    ),);*/
+  _chargeCard(Charge charge) {
+    showLoadingSnackBar();
+    // This is called only before requesting OTP
+    // Save reference so you may send to server if error occurs with OTP
+    handleBeforeValidate(Transaction transaction) {
+      _updateStatus(transaction.reference, 'validating...');
+    }
 
+    handleOnError(Object e, Transaction transaction) {
+      // If an access code has expired, simply ask your server for a new one
+      // and restart the charge instead of displaying error
+      if (e is ExpiredAccessCodeException) {
+//        _startAfreshCharge();
+        _chargeCard(charge);
+        return;
+      }
+
+      if (transaction.reference != null) {
+        _verifyOnServer(transaction.reference);
+      } else {
+//        setState(() => _inProgress = false);
+        _updateStatus(transaction.reference, e.toString());
+      }
+    }
+
+    // This is called only after transaction is successful
+    handleOnSuccess(Transaction transaction) {
+      _verifyOnServer(transaction.reference);
+    }
+
+    PaystackPlugin.chargeCard(context,
+        charge: charge,
+        beforeValidate: (transaction) => handleBeforeValidate(transaction),
+        onSuccess: (transaction) => handleOnSuccess(transaction),
+        onError: (error, transaction) => handleOnError(error, transaction));
+  }
+
+  String _getReference() {
+    String platform;
+    if (Platform.isIOS) {
+      platform = 'iOS';
+    } else {
+      platform = 'Android';
+    }
+
+    return 'ChargedFrom${platform}_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  _verifyOnServer(String transactionRef) async {
+    try {
+      var walletBalace = await APIService.getInstance()
+          .fundAccount("$transactionRef", appStateProvider.token);
+
+      _updateStatus(transactionRef, "Transaction successful");
+
+      appStateProvider.user.walletBalance = walletBalace;
+      appStateProvider.saveDetails(
+          UserAndToken()
+            ..user = appStateProvider.user
+              ..token = appStateProvider.token
+              ..password = appStateProvider.password
+      );
+
+      Future.delayed(Duration(seconds: 3)).then((x) {
+        Navigator.pop(context);
+        /*Navigator.of(context).pushNamedAndRemoveUntil(
+            RoutUtils.home, (Route<dynamic> route) => false);*/
+      });
+    } catch (e) {
+      if(e == null || e.message == null || e.message.isEmpty){
+        _updateStatus("", "Error funding account, please check your internet and try again, if problem persists contact administrator");
+      }else{
+        _updateStatus("", e.message);
+      }
+    }
+  }
+
+  _updateStatus(String reference, String message) {
+    if (message.isNotEmpty) {
+      showInSnackBar(message);
+    }
+//    _showMessage('Reference: $reference \n\ Response: $message',
+//        const Duration(seconds: 7));
+  }
+
+  _showMessage(String message,
+      [Duration duration = const Duration(seconds: 4)]) {
+    _scaffoldKey.currentState.showSnackBar(new SnackBar(
+      content: new Text(message),
+      duration: duration,
+      action: new SnackBarAction(
+          label: 'CLOSE',
+          onPressed: () => _scaffoldKey.currentState.removeCurrentSnackBar()),
+    ));
+  }
+
+  void showToast(String message, BuildContext context) {
 //    Scaffold.of(context).showSnackBar(SnackBar(content: Text(message)));
     Fluttertoast.showToast(
       msg: message,
@@ -402,4 +504,7 @@ class _FundWalletScreenState extends State<FundWalletScreen> {
 //        textcolor: '#ffffff'
     );
   }
+
+  @override
+  GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
 }

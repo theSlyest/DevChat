@@ -8,6 +8,9 @@ import 'package:seclot/views/auth/otp.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthScreen extends StatefulWidget {
+  AuthScreen({this.forgot = false});
+
+  bool forgot;
   @override
   _AuthScreenState createState() => _AuthScreenState();
 }
@@ -24,10 +27,6 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     // Clean up the controller when the Widget is disposed
     phoneNumberTextFieldController.dispose();
-
-    if (_timer != null) {
-      _timer.cancel();
-    }
     super.dispose();
   }
 
@@ -60,7 +59,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              OTPScreen(phoneNumber: _phoneNumber),
+                              OTPScreen(phoneNumber: _phoneNumber, forgot: widget.forgot),
                         ));
 
                     setState(() {
@@ -93,7 +92,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     ;
 
-    return new Scaffold(
+    return Scaffold(
         body: SafeArea(
             child: SingleChildScrollView(
       child: Form(
@@ -121,6 +120,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       if (value.length != 11) {
                         return 'Please enter a valid phone number';
                       }
+                      return null;
                     },
                     maxLength: 11,
                     controller: phoneNumberTextFieldController,
@@ -173,10 +173,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
   _getErrorText() {
     if (errorOccured) {
-      _timer = new Timer(const Duration(milliseconds: 4000), () {
-        setState(() {
-          errorOccured = false;
-        });
+      Future.delayed(Duration(milliseconds: 4000), () {
+        if(mounted){
+          setState(() {
+            errorOccured = false;
+          });
+        }
       });
 
       return SizedBox(

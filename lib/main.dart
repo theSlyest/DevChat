@@ -8,7 +8,9 @@ import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/funding/fund_wallet.dart';
 import 'package:seclot/views/history.dart';
 import 'package:seclot/views/Ice.dart';
+import 'package:seclot/views/notificaton_screen.dart';
 import 'package:seclot/views/payment.dart';
+import 'package:seclot/views/permission_handler.dart';
 import 'package:seclot/views/retract_message.dart';
 import 'package:seclot/views/subscription.dart';
 import 'package:seclot/views/auth_screen.dart';
@@ -21,14 +23,23 @@ import 'package:seclot/views/auth/phone_auth_screen.dart';
 import 'package:seclot/views/splash.dart';
 import 'package:seclot/views/view_profile.dart';
 import 'package:seclot/views/wallet_screen.dart';
+import 'package:flutter/services.dart';
+import 'dart:io' show Platform;
 
 void main() {
   runApp( App());
 }
 
 class App extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
+    if(Platform.isAndroid){
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Colors.black
+      ));
+    }
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(builder: (_) => AppStateProvider()),
@@ -44,6 +55,7 @@ class App extends StatelessWidget {
 
           routes: {
             // When we navigate to the "/" route, build the FirstScreen Widget
+            RoutUtils.location: (context) => GetLocationScreen(),
             RoutUtils.splash: (context) => SplashScreen(),
             RoutUtils.login: (context) => LoginScreen(),
             RoutUtils.auth: (context) => AuthScreen(),
@@ -58,6 +70,7 @@ class App extends StatelessWidget {
             RoutUtils.history: (context) => HistoryScreen(),
 //            RoutUtils.new_user: (context) => NewUserScreen(),
             RoutUtils.fund_wallet: (context) => FundWalletScreen(),
+            RoutUtils.notification: (context) => NotificationScreen(),
           },
 //        home: AuthScreen(),
         ),

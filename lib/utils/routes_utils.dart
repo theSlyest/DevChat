@@ -1,4 +1,5 @@
 class RoutUtils {
+  static final String location = "/location";
   static final String splash = "/";
   static final String login = "/1";
   static final String auth = "/2";
@@ -14,4 +15,5 @@ class RoutUtils {
   static final String retract_message = "/12";
   static final String new_user = "/13";
   static final String fund_wallet = "/14";
+  static final String notification = "/15";
 }

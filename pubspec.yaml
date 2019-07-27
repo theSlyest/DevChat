@@ -32,10 +32,10 @@ dependencies:
   fluttertoast: ^3.1.0
   dio: ^2.1.13
 #  google_places_picker: ^0.0.9
+  flutter_paystack: ^1.0.1
   image: ^2.1.4
   clippy: ^1.0.0
   flutter_places_dialog: ^1.0.5
-  location: any
 #  paystack_sdk: ^0.0.1
   intl: ^0.15.8
   flutter_masked_text: ^0.8.0
@@ -45,11 +45,18 @@ dependencies:
   flutter_advanced_networkimage: ^0.5.0
   flutter_launcher_icons: "^0.7.0"
   flutter_image: ^2.0.0
+  location: any
+  permission: ^0.1.2
 
-  firebase_core: ^0.4.0+6
-  firebase_messaging: ^5.1.0
+  firebase_core: ^0.4.0+8
+  firebase_messaging: ^5.1.2
 
-  location_permissions: '^2.0.0'
+  onesignal_flutter: ^2.0.1
+  cloud_firestore: ^0.12.7+1
+
+  location_permissions: ^2.0.2
+
+  eva_icons_flutter: ^2.0.0
 
 #
 dev_dependencies:

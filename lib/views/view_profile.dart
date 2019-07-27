@@ -55,7 +55,7 @@ class _ViewProfileState extends State<ViewProfile> {
             pin(),
 //              phone(),
             referalId(),
-            address(),
+//            address(),
             editProfile(),
           ],
         ),

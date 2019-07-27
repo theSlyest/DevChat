@@ -11,11 +11,21 @@ class AppStateProvider extends ChangeNotifier{
   UserDTO get user => appState.user;
   String get token => appState.token;
   String get password => appState.password;
+  double get latitude => appState.latitude;
+  double get longitude => appState.longitude;
   List<IceDTO> get personalIces => appState.personalIces;
   List<IceDTO> get corporateIces => appState.corporateIces;
 
   AppStateProvider(){
     appState = AppState();
+  }
+
+  set latitude(double latitude){
+    appState.latitude = latitude;
+  }
+
+  set longitude(double longitude){
+    appState.longitude = longitude;
   }
 
   set user(UserDTO user){
@@ -51,9 +61,17 @@ class AppStateProvider extends ChangeNotifier{
     LocalStorageHelper helper = LocalStorageHelper();
     helper.clearUserAndToken();
   }
+
+  void setLocation({double latitude, double longitude}) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+    notifyListeners();
+  }
 }
 
 class AppState{
+  double latitude;
+  double longitude;
   UserDTO user;
   String token;
   String password;

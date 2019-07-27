@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_masked_text/flutter_masked_text.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:seclot/utils/routes_utils.dart';
@@ -40,7 +42,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   bool paymentReady = false;
 
-  void showBalance() {
+  /*void showBalance() {
     setState(() {
       _error = false;
       _loading = true;
@@ -62,11 +64,11 @@ class _WalletScreenState extends State<WalletScreen> {
         });
       });
     });
-  }
+  }*/
 
   @override
   void initState() {
-    showBalance();
+//    showBalance();
   }
 
   Widget getView() {
@@ -100,7 +102,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           FlatButton(
             onPressed: (() {
-              showBalance();
+//              showBalance();
             }),
 //              child: Text("Cancel", style: TextStyle(),)
           )
@@ -151,7 +153,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         ),
                         Expanded(
                           child: Text(
-                            "ENABLED",
+                            "${appStateProvider.user.accountStatus}",
                             style: TextStyle(
                                 fontSize: 16.0, fontWeight: FontWeight.bold),
                           ),
@@ -172,7 +174,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         ),
                         Expanded(
                           child: Text(
-                            "MON 20/12/018 10:00 AM",
+                            appStateProvider.user.nextBillDate.toString(),
                             style: TextStyle(
                                 fontSize: 16.0, fontWeight: FontWeight.bold),
                           ),
@@ -215,8 +217,11 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  AppStateProvider appStateProvider;
+
   @override
   Widget build(BuildContext context) {
+    appStateProvider = Provider.of<AppStateProvider>(context);
     return SafeArea(
 //      theme: ThemeData(primaryColor: Colors.black, primaryColorDark: Colors.black, accentColor: Colors.black),
 
@@ -238,7 +243,7 @@ class _WalletScreenState extends State<WalletScreen> {
         Column(
           children: <Widget>[
             Text(
-              _balance,
+              "${appStateProvider.user.walletBalance}",
               style: TextStyle(fontSize: 48.0, color: Colors.white),
             ),
             ButtonTheme(

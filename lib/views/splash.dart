@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
 
@@ -12,6 +13,7 @@ import '../utils/routes_utils.dart';
 
 class SplashScreen extends StatelessWidget {
   AppStateProvider appState;
+
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +27,7 @@ class SplashScreen extends StatelessWidget {
 
   Future checkLoginDetails(BuildContext context) async {
 
+    getLocation();
 //    print("appState");
 
   try {
@@ -46,6 +49,9 @@ class SplashScreen extends StatelessWidget {
     Navigator.of(context).pushNamedAndRemoveUntil(
         RoutUtils.login, (Route<dynamic> route) => false);
   }
+
+
+
 
 
     /*LocalStorageHelper().getLoginDetails().then((details) {
@@ -78,6 +84,35 @@ class SplashScreen extends StatelessWidget {
             RoutUtils.login, (Route<dynamic> route) => false);
       }
     });*/
+  }
+
+  Future getLocation() async {
+    Future.delayed(Duration(seconds: 4), (){
+      appState.setLocation(latitude: 9.0820, longitude: 8.6753);
+    });
+    print("getting location");
+    LocationData currentLocation;
+
+    var location = new Location();
+
+// Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      print("in get location");
+
+      currentLocation = await location.getLocation();
+      print("location set");
+      appState.setLocation(
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude);
+
+    } on PlatformException catch (e) {
+      print("error getting location");
+      if (e.code == 'PERMISSION_DENIED') {
+
+      }
+      currentLocation = null;
+    }
+
   }
 
   Widget Page() {

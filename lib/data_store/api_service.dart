@@ -104,7 +104,7 @@ class APIService {
     }
   }
 
-  Future<bool> setPin({String authCode, String pin}) async {
+  Future<UserAndToken> setPin({String authCode, String pin}) async {
     final URL = "$_BASE_URL/user/set-pin";
 
     var header = Map<String, String>();
@@ -115,18 +115,21 @@ class APIService {
       "pin": pin,
     });
 
-    final response = await http.put(URL, headers: header, body: body);
+    final response = await http.post(URL, headers: header, body: body);
 
-    print(body);
-    print(response);
-
+    var resBody = json.decode(response.body);
     if (response.statusCode == 200) {
-//      return true;
+      var token = resBody["token"];
+      UserDTO user = UserDTO.fromJson(resBody["profile"]);
+//      print(resBody);
 
-      print(response.body);
-      print(response.statusCode);
+      UserAndToken loginInfo = UserAndToken();
+      loginInfo.user = user;
+      loginInfo.token = token;
 
-      return true;
+      return loginInfo;
+
+//      {"token":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwODExNTA1NjQwMCIsInByaXZpbGVnZXMiOiJmdWxsIiwiaWF0IjoxNTYzNDYxMzUxfQ.QNm6c67pyW1yRpcTMVUNmCUx4HFat2u8zGyenmLEKQK3Gp8iN2D6ormD4QnWlrveOz06s2MJKgL_NXNRApmEzg","profile":{"firstName":"Emmanuel","lastName":"Ani","lastLocationUpdate":1563445548331,"accountCreationDate":1563445548331,"seclotId":72,"walletBalance":80,"subscriptionStatus":"active","lastKnownLocation":{"longitude":-0.13366759999999997,"latitude":51.5102127}}}
     } else {
       print(response.body);
       print(response.statusCode);
@@ -233,17 +236,26 @@ class APIService {
   Future<UserAndToken> newUser(Map<String, dynamic> body) async {
     final CREATE_ACCOUNT_URL = "$_BASE_URL/user/register";
 
+    print("body => $body");
+
     var header = Map<String, String>();
     header["Content-Type"] = "application/json";
 
     final response = await http.post(CREATE_ACCOUNT_URL,
         body: json.encode(body), headers: header);
 
+
+
+    print("Data fetched");
+    print("headers => ${response.headers}");
+    print("body => ${response.body}");
+    print("head => ${response.statusCode}");
+
+    print("CALL DONE");
+
     var resBody = json.decode(response.body);
-    print(response.body);
-    print(response.statusCode);
     if (response.statusCode == 200) {
-//      // print(response.body);
+       print("RESPONSE IS 200");
 
       // print("API REQUEST WAS SUCCESSFUL");
 
@@ -428,8 +440,7 @@ class APIService {
   //
   //====================================================================================================================//
 
-  Future<http.Response> fundAccount(
-      String transactionReference, String token) async {
+  Future<int> fundAccount(String transactionReference, String token) async {
     final FUND_WALLET = "$_BASE_URL/user/fund-wallet";
 //    // print("ENDPOING ==> $FUND_WALLET");
 
@@ -453,20 +464,25 @@ class APIService {
 
 //    // print("SENDING REQUEST NOW IN FUND_WALLET");
 
-//    var encode = json.decode(response.body);
+    print(response.body);
+    print(response.statusCode);
+    var decode = json.decode(response.body);
 
     if (response.statusCode == 200) {
 //      // print("API REQUEST WAS SUCCESSFUL");
 //      // print("${response.body}");
+
+      return decode["walletBalance"];
 
 //      getUserProfile(token);
     } else {
 //      // print("API REQUEST FAILED WOEFULLY");
 //      // print("${response.statusCode}");
 //      // print("${response.body}");
-    }
 
-    return response;
+      throw Exception(
+          "Error funding account, please check your internet and try again, if problem persists contact the administrator");
+    }
   }
 
   Future<http.Response> updateSubscription(String plan, String token) async {

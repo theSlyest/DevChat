@@ -11,6 +11,7 @@ import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/utils/color_conts.dart';
 import 'package:seclot/utils/routes_utils.dart';
 import 'package:seclot/views/auth/otp.dart';
+import 'package:seclot/views/auth_screen.dart';
 import 'package:seclot/views/widget/ui_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -178,7 +179,11 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
                       Center(
                           child: FlatButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, RoutUtils.auth);
+//                          Navigator.pushNamed(context, RoutUtils.auth);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AuthScreen(forgot: true)));
                         },
                         child: Text(
                           "Forgot password?",
@@ -204,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
         showLoadingSnackBar();
 
         var userData =
-        await APIService().performLogin(_phoneNumber, _pin, _rememberMe);
+            await APIService().performLogin(_phoneNumber, _pin, _rememberMe);
 
         showInSnackBar("Login success");
 
@@ -218,23 +223,23 @@ class _LoginScreenState extends State<LoginScreen> with UISnackBarProvider {
           appStateProvider.saveDetails(userData);
         }
 
-        Future.delayed(Duration(seconds: 2), () =>
-            Navigator.of(context).pushNamedAndRemoveUntil(
+        Future.delayed(
+            Duration(seconds: 2),
+            () => Navigator.of(context).pushNamedAndRemoveUntil(
                 RoutUtils.home, (Route<dynamic> route) => false));
-      }catch(err){
+      } catch (err) {
         print(err);
 
-        if(err == null || err.message == null || err.message.isEmpty){
-          showInSnackBar("Login failed!! Please check your internet, enter a valid phone number and password and try again");
-
-        }else{
-
+        if (err == null || err.message == null || err.message.isEmpty) {
+          showInSnackBar(
+              "Login failed!! Please check your internet, enter a valid phone number and password and try again");
+        } else {
           showInSnackBar("${err.message}");
         }
       }
-
     } else {
-      showInSnackBar("Login failed!! Please check your internet, enter a valid phone number and password and try again");
+      showInSnackBar(
+          "Login failed!! Please check your internet, enter a valid phone number and password and try again");
     }
   }
 }
