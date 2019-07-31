@@ -223,6 +223,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
       child: Scaffold(
           appBar: new AppBar(
+            brightness: Brightness.dark,
             title: Text('Wallet'),
             iconTheme: IconThemeData(color: Colors.white),
             backgroundColor: Colors.black,

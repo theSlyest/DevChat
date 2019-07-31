@@ -26,7 +26,7 @@ class SplashScreen extends StatelessWidget {
   }
 
   Future checkLoginDetails(BuildContext context) async {
-    getLocation();
+    await getLocation();
 //    print("appState");
 
     try {
@@ -83,9 +83,9 @@ class SplashScreen extends StatelessWidget {
   }
 
   Future getLocation() async {
-    Future.delayed(Duration(seconds: 4), () {
+   /* Future.delayed(Duration(seconds: 4), () {
       appState.setLocation(latitude: 9.0820, longitude: 8.6753);
-    });
+    });*/
     print("getting location");
     LocationData currentLocation;
 

@@ -185,6 +185,8 @@ class APIService {
 
     var response = await http.post(URL, body: body);
 
+    print(response.body);
+
     var resBody = json.decode(response.body);
     if (response.statusCode == 200) {
       var token = resBody["token"];

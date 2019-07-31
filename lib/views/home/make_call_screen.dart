@@ -134,6 +134,11 @@ class _MakeCallScreenState extends State<MakeCallScreen>
 //    );
 
     return Scaffold(
+      appBar: AppBar(
+        brightness: Brightness.light,
+        backgroundColor: Colors.white,
+        elevation: 0.0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(

@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${appStateProvider.unreadMessageCount}',
                     style: TextStyle(fontSize: 16),
                   ),*/
-                  appStateProvider.unreadMessageCount > 0
+                  appStateProvider.unreadMessageCount != null && appStateProvider.unreadMessageCount > 0
                       ? Container(
 //                    height: 40,
                           alignment: Alignment.center,
@@ -260,6 +260,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     appStateProvider = widget.appStateProvider;
+
+
     fetchData();
     setupLocalNotification();
     setupFCM();
@@ -268,11 +270,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("LOCATION => ${appStateProvider.latitude} | ${appStateProvider.longitude}");
+    print("USER LOCATION => ${appStateProvider.user.latitude} | ${appStateProvider.user.longitude}");
+
     return Scaffold(
         key: _scaffoldKey,
         drawer: navigationDrawer(),
         backgroundColor: Colors.white,
         appBar: AppBar(
+          brightness: Brightness.light,
           iconTheme: IconThemeData(color: Colors.black),
           backgroundColor: Colors.white,
 //          elevation: 0.0,
@@ -284,6 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: Container(
                 alignment: Alignment.center,
+                padding: EdgeInsets.only(right: 8),
                 child: Stack(
                   children: <Widget>[
                     Icon(
@@ -291,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Positioned(
                       right: 0,
-                      child: appStateProvider.unreadMessageCount > 0
+                      child: appStateProvider.unreadMessageCount != null && appStateProvider.unreadMessageCount > 0
                           ? Container(
                               height: 10,
                               width: 10,

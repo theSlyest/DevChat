@@ -249,7 +249,7 @@ class _GetLocationScreenState extends State<GetLocationScreen>
           state = PermissionState.not_applicable;
         });
       }
-      appStateProvider.setLocation(latitude: 9.0820, longitude: 8.6753);
+//      appStateProvider.setLocation(latitude: 9.0820, longitude: 8.6753);
       gotoSplashScreen();
 
       currentLocation = null;

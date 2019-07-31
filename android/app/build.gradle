@@ -48,8 +48,8 @@ android {
         applicationId "com.seclotmobile"
         minSdkVersion 20
         targetSdkVersion 29
-        versionCode 4//flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        versionCode 6//flutterVersionCode.toInteger()
+        versionName "1.0.6"//flutterVersionName
 //        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true

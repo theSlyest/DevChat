@@ -32,6 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
+            brightness: Brightness.dark,
             iconTheme: IconThemeData(color: Colors.white),
             title: Text(
               'HISTORY',

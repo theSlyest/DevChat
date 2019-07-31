@@ -51,7 +51,9 @@ class _ViewProfileState extends State<ViewProfile> {
             Padding(
               padding: EdgeInsets.all(16.0),
             ),
-            email(),
+          textField("First Name", appStateProvider.user.firstName),
+          textField("Last Name", appStateProvider.user.lastName),
+//            email(),
             pin(),
 //              phone(),
             referalId(),
@@ -124,6 +126,54 @@ class _ViewProfileState extends State<ViewProfile> {
           style: TextStyle(fontSize: 24.0),
         ),
         SizedBox(height: 16.0),
+      ],
+    );
+  }
+  Widget textField(String label, String content) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.only(
+            top: 2.0,
+            left: 16.0,
+            right: 24.0,
+          ),
+          child: Icon(
+            Icons.person,
+            size: _iconSize,
+            color: ColorUtils.dark_gray,
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(
+                  2.0,
+                ),
+                child: Text(
+                  '$label',
+                  style: TextStyle(fontSize: _labelSize, color: Colors.grey),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(
+                  2.0,
+                ),
+                child: Text('$content',
+//                  _email,
+                  style: TextStyle(
+                      fontSize: _inputSize, color: ColorUtils.dark_gray),
+                  softWrap: true,
+                ),
+              ),
+              _horizontalSeparator
+            ],
+          ),
+        ),
       ],
     );
   }

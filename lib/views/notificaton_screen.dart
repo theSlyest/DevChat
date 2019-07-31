@@ -21,6 +21,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     return Scaffold(
         appBar: AppBar(
+
+          brightness: Brightness.dark,
           title: Text("Notifications"),
         ),
         body: Container(
@@ -36,11 +38,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
 //                  print("notifs => ${notifs.keys}");
 
                   notifications.clear();
-                  notifs.forEach((key, value) {
-                    print("key => $key");
-                    print("value => $value");
-                    notifications.add(NotificationDTO.fromMap(value)..id = key);
-                  });
+                  if(notifs != null) {
+                    notifs.forEach((key, value) {
+//                    print("key => $key");
+//                    print("value => $value");
+                      notifications.add(NotificationDTO.fromMap(value)
+                        ..id = key);
+                    });
+                  }
 
                   notifications.sort((a, b) => b.time.compareTo(a.time));
 
@@ -81,15 +86,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
-              "You have not added an ICE yet",
+              "You have no notification",
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
             ),
             SizedBox(
-              height: 14.0,
+              height: 8.0,
             ),
             Text(
-              "[Tap on the + button to add ICEs]",
+              "new notifications will appear here",
               style: TextStyle(fontSize: 14.0),
             ),
           ],

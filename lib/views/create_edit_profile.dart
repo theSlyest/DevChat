@@ -210,7 +210,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen>  with UISnack
                 imageView(),
                 firstName(),
                 lastName(),
-                email(),
+//                email(),
                 pin(),
 //                phone(),
                 referealId(),

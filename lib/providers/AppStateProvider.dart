@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/model/ice.dart';
 import 'package:seclot/model/notification.dart';
@@ -20,7 +21,7 @@ class AppStateProvider extends ChangeNotifier {
   double get latitude => appState.latitude;
   double get longitude => appState.longitude;
   IceDAO get ice => appState.iceDAO;
-  get unreadMessage => unreadMessageCount;
+  get unreadMessage => unreadMessageCount == null ? 0 : unreadMessageCount;
 
   AppStateProvider() {
     appState = AppState();
@@ -42,6 +43,13 @@ class AppStateProvider extends ChangeNotifier {
     if (latitude == -0.0 && longitude == -0.0) {
       latitude = user.latitude;
       longitude = user.longitude;
+      print("setting location");
+    }else if(latitude != user.latitude && longitude != user.longitude){
+      user.latitude = latitude;
+      user.longitude = longitude;
+      //updating location
+      print("updating location");
+      APIService.getInstance().updateUser(token, user);
     }
     //setup notification listener
     ref = database.reference().child(user.phone);
@@ -118,7 +126,7 @@ class AppStateProvider extends ChangeNotifier {
     notif.latitude = user.latitude;
     notif.longitude = user.longitude;
     notif.message =
-        "${user.firstName} ${user.lastName} is in trouble. Needs your help. Last known location lat: ${latitude} lon: ${longitude}. Hurry!!!";
+        "${user.firstName} ${user.lastName} is in trouble. Needs your help. Last known location lat: $latitude lon: $longitude. Hurry!!!";
     ref
         .child("sent")
         .push()
