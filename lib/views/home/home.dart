@@ -1,23 +1,23 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:location/location.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:seclot/data_store/api_service.dart';
 import 'package:seclot/data_store/local_storage_helper.dart';
 import 'package:seclot/data_store/user_details.dart';
 import 'package:seclot/model/ice.dart';
 import 'package:seclot/providers/AppStateProvider.dart';
 import 'package:seclot/scopped_model/user_scopped_model.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:location/location.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:seclot/utils/image_utils.dart';
 import 'package:seclot/utils/margin_utils.dart';
 import 'package:seclot/utils/routes_utils.dart';
-import 'package:eva_icons_flutter/eva_icons_flutter.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:seclot/views/utils/location_helper.dart';
 
 import 'make_call_screen.dart';
 
@@ -158,7 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${appStateProvider.unreadMessageCount}',
                     style: TextStyle(fontSize: 16),
                   ),*/
-                  appStateProvider.unreadMessageCount != null && appStateProvider.unreadMessageCount > 0
+                  appStateProvider.unreadMessageCount != null &&
+                          appStateProvider.unreadMessageCount > 0
                       ? Container(
 //                    height: 40,
                           alignment: Alignment.center,
@@ -261,7 +262,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     appStateProvider = widget.appStateProvider;
 
-
     fetchData();
     setupLocalNotification();
     setupFCM();
@@ -270,15 +270,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("LOCATION => ${appStateProvider.latitude} | ${appStateProvider.longitude}");
-    print("USER LOCATION => ${appStateProvider.user.latitude} | ${appStateProvider.user.longitude}");
+    print(
+        "LOCATION => ${appStateProvider.latitude} | ${appStateProvider.longitude}");
+    print(
+        "USER LOCATION => ${appStateProvider.user.latitude} | ${appStateProvider.user.longitude}");
+
+    if (appStateProvider.latitude == -0.0 &&
+        appStateProvider.longitude == -0.0) {
+      _checkLocation();
+    } else {
+      _scaffoldKey.currentState.hideCurrentSnackBar();
+    }
 
     return Scaffold(
         key: _scaffoldKey,
         drawer: navigationDrawer(),
         backgroundColor: Colors.white,
         appBar: AppBar(
-          brightness: Brightness.light,
+          brightness: Brightness.dark,
           iconTheme: IconThemeData(color: Colors.black),
           backgroundColor: Colors.white,
 //          elevation: 0.0,
@@ -298,7 +307,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Positioned(
                       right: 0,
-                      child: appStateProvider.unreadMessageCount != null && appStateProvider.unreadMessageCount > 0
+                      child: appStateProvider.unreadMessageCount != null &&
+                              appStateProvider.unreadMessageCount > 0
                           ? Container(
                               height: 10,
                               width: 10,
@@ -536,5 +546,24 @@ class _HomeScreenState extends State<HomeScreen> {
   void fetchData() {
     iceController = Observable.fromFuture(
         APIService.getInstance().fetchIce(appStateProvider.token));
+  }
+
+  void _checkLocation() {
+    Future.delayed(Duration.zero, () async {
+      await getLocation(context, appStateProvider, () {
+        _scaffoldKey.currentState.showSnackBar(
+          SnackBar(
+            content: Text(
+                "Location not available, you will not be able to send a distress call"),
+            action: SnackBarAction(
+                label: "Get Location",
+                onPressed: () {
+                  _checkLocation();
+                }),
+            duration: Duration(days: 1),
+          ),
+        );
+      });
+    });
   }
 }

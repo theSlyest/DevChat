@@ -10,7 +10,7 @@ description: A new Flutter project.
 version: 1.0.1+2
 
 environment:
-  sdk: ">=2.0.0-dev.68.0 <3.0.0"
+  sdk: ">=2.1.0 <3.0.0"
   intl: ^0.15.7
 
 #environment:
@@ -45,7 +45,7 @@ dependencies:
   flutter_advanced_networkimage: ^0.5.0
   flutter_launcher_icons: "^0.7.0"
   flutter_image: ^2.0.0
-  location: any
+  location: ^2.3.5
   permission: ^0.1.2
 
   firebase_core: ^0.4.0+8
